@@ -1,44 +1,50 @@
 /**
  * Storage layer for persisting captured network data
- * Handles JSON serialization and file system operations
+ * Supports both local and cloud storage modes through adapters
  */
 
 import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { CaptureSession, StorageResult } from './types.js';
+import type { IStorageAdapter } from './storage-adapter.js';
+import { LocalStorageAdapter } from './local-storage-adapter.js';
+import { CloudStorageAdapter } from './cloud-storage-adapter.js';
+import { Config } from './config.js';
 
-// Get the project root directory (2 levels up from this file: lib -> src -> root)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const PROJECT_ROOT = join(__dirname, '..', '..');
-
-// Allow data directory to be configured via environment variable
-// Falls back to: 1) MCP_NETWORK_ANALYZER_DATA env var, 2) cwd()/mcp-network-data, 3) package data dir
-const getDataDirectory = (): string => {
-  if (process.env.MCP_NETWORK_ANALYZER_DATA) {
-    return process.env.MCP_NETWORK_ANALYZER_DATA;
-  }
-  
-  // For installed package: use cwd() + mcp-network-data
-  // For development: use package data dir
-  if (process.cwd() !== PROJECT_ROOT) {
-    return join(process.cwd(), 'mcp-network-data');
-  }
-  
-  return join(PROJECT_ROOT, 'data');
-};
-
-const DATA_DIR = getDataDirectory();
-const CAPTURES_DIR = join(DATA_DIR, 'captures');
-
+/**
+ * Storage facade that delegates to the appropriate adapter
+ */
 export class Storage {
+  private static adapter: IStorageAdapter | null = null;
+
+  /**
+   * Get the storage adapter (lazy initialization)
+   */
+  private static getAdapter(): IStorageAdapter {
+    if (!this.adapter) {
+      const config = Config.getInstance();
+      
+      if (config.isCloudMode()) {
+        this.adapter = new CloudStorageAdapter();
+      } else {
+        this.adapter = new LocalStorageAdapter();
+      }
+    }
+    
+    return this.adapter;
+  }
+
+  /**
+   * Reset the adapter (useful for testing or mode switching)
+   */
+  static resetAdapter(): void {
+    this.adapter = null;
+  }
+
   /**
    * Get the data directory path
    */
   static getDataDirectory(): string {
-    return DATA_DIR;
+    return this.getAdapter().getDataDirectory();
   }
 
   /**
@@ -52,91 +58,34 @@ export class Storage {
    * Get the path for a capture session
    */
   static getSessionPath(sessionId: string): string {
-    return join(CAPTURES_DIR, sessionId);
+    return this.getAdapter().getSessionPath(sessionId);
   }
 
   /**
    * Ensure data directories exist
    */
   static async ensureDirectories(): Promise<void> {
-    await mkdir(CAPTURES_DIR, { recursive: true });
-    await mkdir(join(DATA_DIR, 'analyses'), { recursive: true });
-    await mkdir(join(DATA_DIR, 'generated'), { recursive: true });
+    await this.getAdapter().initialize();
   }
 
   /**
-   * Save a capture session to disk
+   * Save a capture session
    */
   static async saveCaptureSession(session: CaptureSession): Promise<StorageResult> {
-    try {
-      const sessionPath = this.getSessionPath(session.id);
-      await mkdir(sessionPath, { recursive: true });
-
-      // Save complete session data
-      const sessionFilePath = join(sessionPath, 'session.json');
-      await writeFile(sessionFilePath, JSON.stringify(session, null, 2), 'utf-8');
-
-      // Save individual components for easier access
-      const requestsPath = join(sessionPath, 'requests.json');
-      await writeFile(requestsPath, JSON.stringify(session.requests, null, 2), 'utf-8');
-
-      const responsesPath = join(sessionPath, 'responses.json');
-      await writeFile(responsesPath, JSON.stringify(session.responses, null, 2), 'utf-8');
-
-      // Save metadata
-      const metadataPath = join(sessionPath, 'metadata.json');
-      await writeFile(
-        metadataPath,
-        JSON.stringify(
-          {
-            id: session.id,
-            url: session.url,
-            startTime: session.startTime,
-            endTime: session.endTime,
-            userAgent: session.userAgent,
-            viewport: session.viewport,
-            metadata: session.metadata
-          },
-          null,
-          2
-        ),
-        'utf-8'
-      );
-
-      return {
-        success: true,
-        path: sessionPath
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
+    return this.getAdapter().saveCaptureSession(session);
   }
 
   /**
    * Save arbitrary data to a specific path
    */
-  static async saveData(
-    relativePath: string,
-    data: unknown,
-    baseDir = DATA_DIR
-  ): Promise<StorageResult> {
-    try {
-      const fullPath = join(baseDir, relativePath);
-      await mkdir(dirname(fullPath), { recursive: true });
-      await writeFile(fullPath, JSON.stringify(data, null, 2), 'utf-8');
+  static async saveData(relativePath: string, data: unknown): Promise<StorageResult> {
+    return this.getAdapter().saveData(relativePath, data);
+  }
 
-      return {
-        success: true,
-        path: fullPath
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
+  /**
+   * Get current storage mode
+   */
+  static getMode(): string {
+    return Config.getInstance().getMode();
   }
 }

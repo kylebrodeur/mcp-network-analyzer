@@ -1,0 +1,12 @@
+[
+  {
+    "id": "req_1",
+    "timestamp": "2025-11-15T22:27:44.982Z",
+    "method": "GET",
+    "url": "https://example.com/api/data",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "resourceType": "fetch"
+  }
+]
