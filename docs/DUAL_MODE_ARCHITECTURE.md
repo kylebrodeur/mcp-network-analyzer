@@ -1,12 +1,13 @@
-# Dual-Mode Storage Architecture
+# Multi-Mode Storage Architecture
 
-This document explains the dual-mode storage architecture implemented in MCP Network Analyzer.
+This document explains the multi-mode storage architecture implemented in MCP Network Analyzer.
 
 ## Overview
 
-MCP Network Analyzer supports two storage modes:
+MCP Network Analyzer supports three storage modes:
 1. **Local Mode** - Stores data in the local file system (default)
 2. **Cloud Mode** - Stores data in cloud storage (AWS S3, GCS, Azure Blob, etc.)
+3. **Blaxel Mode** - Integrates with Blaxel hosting service for optimized MCP storage
 
 ## Architecture
 
@@ -18,19 +19,20 @@ MCP Network Analyzer supports two storage modes:
 │                   (storage.ts)                          │
 └────────────────────┬────────────────────────────────────┘
                      │
-        ┌────────────┴────────────┐
-        │                         │
-┌───────▼────────┐      ┌────────▼──────────┐
-│ Local Adapter  │      │  Cloud Adapter    │
-│ (local-storage │      │ (cloud-storage-   │
-│  -adapter.ts)  │      │   adapter.ts)     │
-└────────────────┘      └───────────────────┘
-        │                         │
-        │                         │
-┌───────▼────────┐      ┌────────▼──────────┐
-│  File System   │      │  Cloud Storage    │
-│  (local disk)  │      │  (S3/GCS/Azure)   │
-└────────────────┘      └───────────────────┘
+        ┌────────────┼────────────┐
+        │            │            │
+┌───────▼──────┐ ┌──▼────────┐ ┌─▼──────────────┐
+│Local Adapter │ │Cloud      │ │Blaxel Adapter  │
+│(local-       │ │Adapter    │ │(blaxel-storage-│
+│ storage-     │ │(cloud-    │ │ adapter.ts)    │
+│ adapter.ts)  │ │storage-   │ │                │
+│              │ │adapter.ts)│ │                │
+└──────┬───────┘ └─────┬─────┘ └────────┬───────┘
+       │               │                │
+┌──────▼───────┐ ┌─────▼────────┐ ┌────▼────────┐
+│File System   │ │Cloud Storage │ │Blaxel API   │
+│(local disk)  │ │(S3/GCS/Azure)│ │(MCP Hosting)│
+└──────────────┘ └──────────────┘ └─────────────┘
 ```
 
 ### Configuration
@@ -70,6 +72,14 @@ interface IStorageAdapter {
 - Uses provider-specific SDKs for uploads
 - Includes retry logic and error handling
 
+#### Blaxel Storage Adapter
+
+- Integrates with Blaxel MCP hosting platform
+- Optimized for MCP workloads and data sharing
+- Provides hosting URLs for captured sessions
+- Mock implementation ready for production API integration
+- Supports custom endpoints for self-hosted Blaxel instances
+
 ## Configuration
 
 ### Environment Variables
@@ -86,6 +96,16 @@ MCP_STORAGE_MODE=cloud
 MCP_CLOUD_PROVIDER=aws-s3
 MCP_CLOUD_BUCKET=my-bucket
 MCP_CLOUD_REGION=us-east-1
+MCP_CLOUD_ACCESS_KEY_ID=xxx
+MCP_CLOUD_SECRET_ACCESS_KEY=yyy
+```
+
+#### Blaxel Mode
+```bash
+MCP_STORAGE_MODE=blaxel
+BLAXEL_PROJECT_ID=your-project-id
+BLAXEL_API_KEY=your-api-key  # Optional for local dev
+BLAXEL_ENDPOINT=https://api.blaxel.ai  # Optional, custom endpoint
 MCP_CLOUD_ACCESS_KEY_ID=xxx
 MCP_CLOUD_SECRET_ACCESS_KEY=yyy
 ```

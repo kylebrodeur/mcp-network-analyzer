@@ -1,6 +1,6 @@
 /**
  * Storage layer for persisting captured network data
- * Supports both local and cloud storage modes through adapters
+ * Supports local, cloud, and Blaxel storage modes through adapters
  */
 
 import { randomUUID } from 'node:crypto';
@@ -8,6 +8,7 @@ import type { CaptureSession, StorageResult } from './types.js';
 import type { IStorageAdapter } from './storage-adapter.js';
 import { LocalStorageAdapter } from './local-storage-adapter.js';
 import { CloudStorageAdapter } from './cloud-storage-adapter.js';
+import { createBlaxelStorageAdapter } from './blaxel-storage-adapter.js';
 import { Config } from './config.js';
 
 /**
@@ -23,7 +24,9 @@ export class Storage {
     if (!this.adapter) {
       const config = Config.getInstance();
       
-      if (config.isCloudMode()) {
+      if (config.isBlaxelMode()) {
+        this.adapter = createBlaxelStorageAdapter();
+      } else if (config.isCloudMode()) {
         this.adapter = new CloudStorageAdapter();
       } else {
         this.adapter = new LocalStorageAdapter();

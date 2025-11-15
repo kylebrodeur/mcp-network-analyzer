@@ -1,9 +1,9 @@
 /**
  * Configuration management for MCP Network Analyzer
- * Supports both local and cloud storage modes
+ * Supports local, cloud, and Blaxel storage modes
  */
 
-export type StorageMode = 'local' | 'cloud';
+export type StorageMode = 'local' | 'cloud' | 'blaxel';
 
 export interface CloudStorageConfig {
   provider: 'aws-s3' | 'gcp-storage' | 'azure-blob' | 'custom';
@@ -17,10 +17,17 @@ export interface CloudStorageConfig {
   };
 }
 
+export interface BlaxelStorageConfig {
+  apiKey?: string;
+  endpoint?: string;
+  projectId?: string;
+}
+
 export interface ConfigOptions {
   mode: StorageMode;
   localDataDir?: string;
   cloudStorage?: CloudStorageConfig;
+  blaxelStorage?: BlaxelStorageConfig;
 }
 
 export class Config {
@@ -74,6 +81,15 @@ export class Config {
       };
     }
 
+    // Load Blaxel storage configuration if in blaxel mode
+    if (mode === 'blaxel') {
+      config.blaxelStorage = {
+        apiKey: process.env.BLAXEL_API_KEY,
+        endpoint: process.env.BLAXEL_ENDPOINT,
+        projectId: process.env.BLAXEL_PROJECT_ID
+      };
+    }
+
     return config;
   }
 
@@ -99,6 +115,13 @@ export class Config {
   }
 
   /**
+   * Check if running in Blaxel mode
+   */
+  isBlaxelMode(): boolean {
+    return this.config.mode === 'blaxel';
+  }
+
+  /**
    * Get local data directory (if configured)
    */
   getLocalDataDir(): string | undefined {
@@ -110,6 +133,13 @@ export class Config {
    */
   getCloudStorageConfig(): CloudStorageConfig | undefined {
     return this.config.cloudStorage;
+  }
+
+  /**
+   * Get Blaxel storage configuration (if configured)
+   */
+  getBlaxelStorageConfig(): BlaxelStorageConfig | undefined {
+    return this.config.blaxelStorage;
   }
 
   /**
