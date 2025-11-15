@@ -1,0 +1,47 @@
+{
+  "id": "test_session_1763245664982",
+  "url": "https://example.com",
+  "startTime": "2025-11-15T22:27:44.982Z",
+  "endTime": "2025-11-15T22:27:44.982Z",
+  "userAgent": "Test User Agent",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "requests": [
+    {
+      "id": "req_1",
+      "timestamp": "2025-11-15T22:27:44.982Z",
+      "method": "GET",
+      "url": "https://example.com/api/data",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "resourceType": "fetch"
+    }
+  ],
+  "responses": [
+    {
+      "id": "res_1",
+      "requestId": "req_1",
+      "timestamp": "2025-11-15T22:27:44.982Z",
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "body": "{\"test\": \"data\"}",
+      "size": 16
+    }
+  ],
+  "metadata": {
+    "totalRequests": 1,
+    "totalResponses": 1,
+    "capturedRequestTypes": {
+      "fetch": 1
+    },
+    "domains": [
+      "example.com"
+    ]
+  }
+}

@@ -17,16 +17,81 @@ pnpm install
 pnpm run build
 ```
 
+## Storage Modes
+
+MCP Network Analyzer supports two storage modes:
+
+### Local Mode (Default)
+Stores all captured data in local file system.
+
+```bash
+# Default: uses ./data directory
+MCP_STORAGE_MODE=local node dist/index.js
+
+# Custom local directory
+MCP_STORAGE_MODE=local MCP_NETWORK_ANALYZER_DATA=/path/to/data node dist/index.js
+```
+
+### Cloud Mode
+Stores captured data in cloud storage (AWS S3, Google Cloud Storage, Azure Blob, etc.).
+
+```bash
+# AWS S3 example
+MCP_STORAGE_MODE=cloud \
+MCP_CLOUD_PROVIDER=aws-s3 \
+MCP_CLOUD_BUCKET=my-bucket \
+MCP_CLOUD_REGION=us-east-1 \
+MCP_CLOUD_ACCESS_KEY_ID=your-access-key \
+MCP_CLOUD_SECRET_ACCESS_KEY=your-secret-key \
+node dist/index.js
+```
+
+**Supported Cloud Providers:**
+- `aws-s3` - Amazon S3
+- `gcp-storage` - Google Cloud Storage
+- `azure-blob` - Azure Blob Storage
+- `custom` - Custom S3-compatible endpoint
+
+**Cloud Configuration Environment Variables:**
+- `MCP_STORAGE_MODE` - Set to `cloud` for cloud storage
+- `MCP_CLOUD_PROVIDER` - Cloud storage provider
+- `MCP_CLOUD_BUCKET` - Bucket/container name
+- `MCP_CLOUD_REGION` - Region (AWS/GCP)
+- `MCP_CLOUD_ENDPOINT` - Custom endpoint URL (for S3-compatible services)
+- `MCP_CLOUD_ACCESS_KEY_ID` - Access key/credential
+- `MCP_CLOUD_SECRET_ACCESS_KEY` - Secret key/credential
+
 ## Usage with Claude Desktop
 
 Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
+### Local Mode (Default)
 ```json
 {
   "mcpServers": {
     "network-analyzer": {
       "command": "node",
       "args": ["/Users/kylebrodeur/mcp-network-analyzer/dist/index.js"]
+    }
+  }
+}
+```
+
+### Cloud Mode (AWS S3)
+```json
+{
+  "mcpServers": {
+    "network-analyzer": {
+      "command": "node",
+      "args": ["/Users/kylebrodeur/mcp-network-analyzer/dist/index.js"],
+      "env": {
+        "MCP_STORAGE_MODE": "cloud",
+        "MCP_CLOUD_PROVIDER": "aws-s3",
+        "MCP_CLOUD_BUCKET": "my-bucket",
+        "MCP_CLOUD_REGION": "us-east-1",
+        "MCP_CLOUD_ACCESS_KEY_ID": "your-access-key",
+        "MCP_CLOUD_SECRET_ACCESS_KEY": "your-secret-key"
+      }
     }
   }
 }
