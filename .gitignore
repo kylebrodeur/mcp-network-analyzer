@@ -14,3 +14,8 @@ analysis.json
 exported-data/
 *.sqlite
 *.db
+
+# Test data (but keep .gitkeep files)
+data/captures/test_*
+data/analyses/test_*
+data/generated/test_*
