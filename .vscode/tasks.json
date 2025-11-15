@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "pnpm: build",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "build"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$tsc"],
+      "detail": "Compile TypeScript sources into dist/."
+    },
+    {
+      "label": "pnpm: dev",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "dev"],
+      "isBackground": true,
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Start the MCP server in watch mode via tsx."
+    },
+    {
+      "label": "pnpm: type-check",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "type-check"],
+      "group": "test",
+      "problemMatcher": ["$tsc"],
+      "detail": "Run TypeScript in noEmit mode."
+    },
+    {
+      "label": "pnpm: clean",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "clean"],
+      "detail": "Remove build artifacts."
+    }
+  ]
+}

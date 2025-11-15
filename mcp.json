@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "network-analyzer": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {
+        "DEBUG": "mcp-network-analyzer:*"
+      }
+    }
+  }
+}
