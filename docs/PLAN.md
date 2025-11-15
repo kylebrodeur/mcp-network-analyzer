@@ -380,7 +380,7 @@ interface GenerationContext {
 
 ## Current State & Next Steps
 
-### ✅ Completed (Phase 1 & 2)
+### ✅ Completed (Phase 1 & 2 + Storage Integration)
 
 **Infrastructure:**
 
@@ -400,14 +400,26 @@ interface GenerationContext {
 - Storage layer (`src/lib/storage.ts`) with JSON persistence
 - **Fully functional `capture_network_requests` tool** (`src/tools/capture.ts`)
 
+**Multi-Mode Storage Architecture:**
+
+- Storage adapter interface (`IStorageAdapter`) in `src/lib/storage-adapter.ts`
+- Local storage adapter (`src/lib/local-storage-adapter.ts`)
+- Cloud storage adapter (`src/lib/cloud-storage-adapter.ts`) with S3/GCS/Azure support
+- **Blaxel storage adapter** (`src/lib/blaxel-storage-adapter.ts`) - mock implementation
+- Configuration system (`src/lib/config.ts`) with environment variable support
+- Test coverage for all storage modes (`test/test-dual-mode.js`)
+- Comprehensive documentation (`docs/DUAL_MODE_ARCHITECTURE.md`, `docs/BLAXEL_INTEGRATION.md`)
+
 **Features Implemented:**
 
 - Launch Chromium browser with stealth mode
 - Intercept and capture HTTP requests/responses
 - Filter by resource type (exclude static assets by default)
-- Save captured data to `data/captures/{sessionId}/`
+- Save captured data to local, cloud (S3/GCS/Azure), or Blaxel storage
 - Session persistence with metadata
 - Proper error handling and cleanup
+- Storage mode switching via environment variables
+- Blaxel hosting URLs for captured sessions
 
 **Build & Type Safety:**
 
@@ -416,20 +428,73 @@ interface GenerationContext {
 - Zod v3.23.8 aligned with MCP SDK types
 - Error-free compilation and type checking
 - Playwright Chromium installed
+- CodeQL security: 0 vulnerabilities
 
-### 🚧 Next Steps (Phase 2 Testing → Phase 3)
+**Modal Integration (Prepared, Not Deployed):**
 
-1. **Test Capture Tool**
-   - Test with MCP Inspector: `npx @modelcontextprotocol/inspector node dist/index.js`
-   - Try capturing from a test site (e.g., https://jsonplaceholder.typicode.com)
-   - Verify captured data structure in `data/captures/`
-   - Test with Claude Desktop integration
+- Modal analysis functions code (`docs/modal_analysis.py`)
+- Modal Gradio UI code (`docs/modal_gradio_app.py`)
+- Integration documentation (`docs/MODAL_INTEGRATION.md`)
+- Deployment guide (`docs/HACKATHON_DEPLOYMENT.md`)
+- Quick start guide (`docs/NEXT_STEPS_MODAL.md`)
 
-2. **Begin Phase 3: Analysis Tools**
-   - Implement basic analyzer (`src/lib/analyzer.ts`)
-   - Create `analyze_captured_data` tool (`src/tools/analyze.ts`)
-   - Build pattern matcher (`src/lib/pattern-matcher.ts`)
-   - Create `discover_api_patterns` tool (`src/tools/discover.ts`)
+### 🚧 Next Steps
+
+#### Priority 1: Deploy to Blaxel Hosting
+
+**Current State:** Blaxel storage adapter implemented (mock mode), but MCP server not hosted on Blaxel platform yet.
+
+**Tasks:**
+1. Sign up for Blaxel account at [blaxel.ai](https://blaxel.ai)
+2. Get Blaxel project ID and API key
+3. Configure Blaxel hosting for MCP server
+4. Update Blaxel storage adapter from mock to production API
+5. Deploy MCP server to Blaxel platform
+6. Test capture tool with Blaxel hosting
+7. Verify Claude Desktop can connect to Blaxel-hosted server
+
+**Expected Outcome:**
+- MCP server accessible via Blaxel hosting URL
+- Claude Desktop connects to Blaxel-hosted server
+- Captured data automatically stored in Blaxel cloud
+- Sharing URLs work: `blaxel://project-id/captures/session_xxx`
+
+#### Priority 2: Deploy Modal Integration
+
+**Current State:** Code written, documentation complete, not deployed.
+
+**Tasks:**
+1. Install Modal CLI: `pip install modal`
+2. Authenticate: `modal setup`
+3. Create Anthropic API secret: `modal secret create anthropic-secret ANTHROPIC_API_KEY=sk-ant-...`
+4. Deploy analysis functions: `modal deploy modal_analysis.py`
+5. Deploy Gradio UI: `modal deploy modal_gradio_app.py`
+6. Create Modal client library in MCP server (`src/lib/modal-client.ts`)
+7. Update MCP tools to call Modal for heavy analysis
+8. Test end-to-end workflow: capture → Modal analysis → Gradio UI
+
+**Expected Outcome:**
+- Modal functions live at `https://WORKSPACE--network-analyzer-*.modal.run`
+- Gradio UI accessible for visualizing captures
+- ML-powered API pattern analysis working
+- Claude-generated export code via Modal
+
+#### Priority 3: Phase 3 Analysis Tools (Local Implementation)
+
+**Current State:** Placeholder tools exist, no implementation.
+
+**Tasks:**
+1. Implement basic analyzer (`src/lib/analyzer.ts`)
+2. Create `analyze_captured_data` tool (`src/tools/analyze.ts`)
+3. Build pattern matcher (`src/lib/pattern-matcher.ts`)
+4. Create `discover_api_patterns` tool (`src/tools/discover.ts`)
+5. Add authentication method detection
+6. Implement data structure inference
+
+**Expected Outcome:**
+- Local analysis tools work without Modal dependency
+- Basic endpoint grouping and pattern recognition
+- Foundation for Modal-enhanced analysis
 
 ---
 
