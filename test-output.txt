@@ -1,0 +1,36 @@
+MCP Network Analyzer - Dual-Mode Storage Test
+
+
+=== Testing Local Mode ===
+Mode: local
+Is Local Mode: true
+Data Directory: /home/runner/work/mcp-network-analyzer/mcp-network-analyzer/data
+Session ID: test_session_1763245921214
+Save Result: ✓ Success
+Saved to: /home/runner/work/mcp-network-analyzer/mcp-network-analyzer/data/captures/test_session_1763245921214
+
+=== Testing Cloud Mode ===
+Mode: cloud
+Is Cloud Mode: true
+[Cloud Storage] Warning: AWS credentials not fully configured. Falling back to IAM role or environment credentials.
+[Cloud Storage] Initialized aws-s3 storage
+[Cloud Storage] Bucket: test-bucket
+[Cloud Storage] Region: us-east-1
+Data Directory: test-bucket/mcp-network-analyzer
+Session ID: test_session_1763245921218
+[Cloud Storage] Would save 4 files to mcp-network-analyzer/captures/test_session_1763245921218
+[Cloud Storage] Mock upload of 4 files completed
+Save Result: ✓ Success
+Saved to: aws-s3://test-bucket/mcp-network-analyzer/captures/test_session_1763245921218
+
+=== Testing Configuration Switch ===
+Initial mode: local
+Updated mode: cloud
+Cloud config: { provider: 'aws-s3', bucket: 'test-bucket', region: 'us-east-1' }
+
+=== Test Results ===
+Local Mode: ✓ PASS
+Cloud Mode: ✓ PASS
+Config Switch: ✓ PASS
+
+Overall: ✓ ALL TESTS PASSED
