@@ -10,6 +10,7 @@
 ## Project Overview
 
 Build a Model Context Protocol (MCP) server that enables LLMs to:
+
 1. Capture network traffic from any website
 2. Intelligently analyze API patterns and data structures
 3. Automatically generate custom export/scraping tools
@@ -100,7 +101,8 @@ mcp-network-analyzer/
 
 **Goal:** MCP server scaffold and basic browser automation
 
-#### Tasks:
+#### Tasks
+
 - [x] Initialize project with TypeScript and MCP SDK
 - [x] Install dependencies (Playwright, Puppeteer, Zod v3.23.8)
 - [x] Create directory structure (`src/`, `data/`, `docs/`, `.vscode/`, `.github/`)
@@ -113,7 +115,8 @@ mcp-network-analyzer/
 - [ ] Set up stealth configuration (anti-bot detection)
 - [ ] Test MCP server connection with Claude Desktop
 
-#### Deliverables:
+#### Deliverables
+
 - ✅ Working MCP server scaffold that compiles and type-checks
 - ✅ All five tools registered and callable (return not-implemented placeholder)
 - ✅ Structured logging to STDERR (preserves STDOUT for MCP protocol)
@@ -127,7 +130,8 @@ mcp-network-analyzer/
 
 **Goal:** Capture and store network requests/responses
 
-#### Tasks:
+#### Tasks
+
 - [ ] Implement network interceptor (`src/lib/interceptor.ts`)
 - [ ] Create capture tool (`src/tools/capture.ts`)
 - [ ] Build storage layer for captured data (`src/lib/storage.ts`)
@@ -135,12 +139,14 @@ mcp-network-analyzer/
 - [ ] Add filtering options (ignore static assets, focus on API calls)
 - [ ] Implement session management (handle auth, cookies)
 
-#### Deliverables:
+#### Deliverables
+
 - `capture_network_requests` MCP tool
 - JSON files with captured requests/responses
 - Session persistence for authenticated browsing
 
-#### Data Format:
+#### Data Format
+
 ```typescript
 interface CapturedRequest {
   id: string;
@@ -178,7 +184,8 @@ interface CaptureSession {
 
 **Goal:** Intelligent API pattern recognition
 
-#### Tasks:
+#### Tasks
+
 - [ ] Implement basic analyzer (`src/lib/analyzer.ts`)
 - [ ] Create `analyze_captured_data` tool (`src/tools/analyze.ts`)
 - [ ] Build pattern matcher (`src/lib/pattern-matcher.ts`)
@@ -186,14 +193,16 @@ interface CaptureSession {
 - [ ] Add authentication method detection
 - [ ] Implement data structure inference
 
-#### Deliverables:
+#### Deliverables
+
 - `analyze_captured_data` - basic endpoint grouping
 - `discover_api_patterns` - advanced pattern recognition
 - Analysis JSON with structured insights
 
-#### Analysis Features:
+#### Analysis Features
 
 **Basic Analysis:**
+
 - Group requests by domain/path patterns
 - Identify API vs static resource requests
 - Extract authentication headers (cookies, tokens, API keys)
@@ -201,6 +210,7 @@ interface CaptureSession {
 - Count and categorize status codes
 
 **Pattern Discovery:**
+
 - Identify REST patterns (list endpoints, detail endpoints)
 - Detect pagination patterns (page, offset, cursor)
 - Recognize search/filter parameters
@@ -209,6 +219,7 @@ interface CaptureSession {
 - Identify rate limiting headers
 
 **Authentication Analysis:**
+
 - Cookie-based auth
 - Bearer tokens
 - API keys
@@ -216,7 +227,8 @@ interface CaptureSession {
 - OAuth flows
 - Session management
 
-#### Output Format:
+#### Output Format
+
 ```typescript
 interface APIPattern {
   type: 'list' | 'detail' | 'create' | 'update' | 'delete' | 'search';
@@ -268,7 +280,8 @@ interface AnalysisResult {
 
 **Goal:** Automatically generate export tools
 
-#### Tasks:
+#### Tasks
+
 - [ ] Create template engine (`src/lib/code-generator.ts`)
 - [ ] Design export script template (`src/templates/export-script.ts.hbs`)
 - [ ] Implement `generate_export_tool` (`src/tools/generate.ts`)
@@ -276,12 +289,14 @@ interface AnalysisResult {
 - [ ] Generate API client code
 - [ ] Create error handling and retry logic in templates
 
-#### Deliverables:
+#### Deliverables
+
 - `generate_export_tool` MCP tool
 - Generated TypeScript/JavaScript export scripts
 - Runnable tools with proper error handling
 
-#### Generated Tool Features:
+#### Generated Tool Features
+
 - **Browser automation** using discovered stealth techniques
 - **Authentication** using captured headers/cookies
 - **Smart pagination** based on detected patterns
@@ -290,7 +305,8 @@ interface AnalysisResult {
 - **Data validation** with generated TypeScript types
 - **Error recovery** with exponential backoff
 
-#### Template Variables:
+#### Template Variables
+
 ```typescript
 interface GenerationContext {
   toolName: string;
@@ -316,19 +332,22 @@ interface GenerationContext {
 
 **Goal:** Make captured data searchable
 
-#### Tasks:
+#### Tasks
+
 - [ ] Implement data indexing (consider SQLite FTS)
 - [ ] Create `search_exported_data` tool (`src/tools/search.ts`)
 - [ ] Add filtering by date, domain, status code
 - [ ] Implement full-text search on responses
 - [ ] Build aggregation queries (count by endpoint, etc.)
 
-#### Deliverables:
+#### Deliverables
+
 - `search_exported_data` MCP tool
 - Fast search across captured data
 - Aggregation and reporting capabilities
 
-#### Search Capabilities:
+#### Search Capabilities
+
 - Full-text search on request URLs and response bodies
 - Filter by domain, path pattern, status code, date range
 - Aggregate by endpoint, response time, size
@@ -340,7 +359,8 @@ interface GenerationContext {
 
 **Goal:** Production-ready server
 
-#### Tasks:
+#### Tasks
+
 - [ ] Comprehensive error handling
 - [ ] Logging and debugging tools
 - [ ] Performance optimization
@@ -349,7 +369,8 @@ interface GenerationContext {
 - [ ] Add configuration file support
 - [ ] Publish to npm (optional)
 
-#### Deliverables:
+#### Deliverables
+
 - Production-ready MCP server
 - Complete documentation with examples
 - Installation guide for Claude Desktop
@@ -362,6 +383,7 @@ interface GenerationContext {
 ### ✅ Completed (Phase 1)
 
 **Infrastructure:**
+
 - MCP server entry point (`src/index.ts`) with `McpServer` + `StdioServerTransport`
 - Zod schemas for all 5 tools with strict validation
 - Placeholder handlers returning "not implemented" responses
@@ -371,6 +393,7 @@ interface GenerationContext {
 - Template directory placeholder (`src/templates/`)
 
 **Build & Type Safety:**
+
 - TypeScript strict mode enabled
 - `pnpm run build`, `dev`, `type-check`, `clean` scripts functional
 - Zod v3.23.8 aligned with MCP SDK types
@@ -418,6 +441,7 @@ interface GenerationContext {
 **Decision:** Use **Playwright** as primary, keep Puppeteer as fallback
 
 **Rationale:**
+
 - Playwright has better TypeScript support
 - Multi-browser testing capability
 - Better network interception API
@@ -427,11 +451,13 @@ interface GenerationContext {
 ### Storage: Files vs Database
 
 **Decision:** **Hybrid approach**
+
 - Captured data → JSON files (human-readable, debuggable)
 - Indexed search → SQLite with FTS5 (fast queries)
 - Generated tools → TypeScript/JavaScript files
 
 **Rationale:**
+
 - JSON files easy to inspect and share
 - SQLite provides fast search without external dependencies
 - Generated code needs to be editable by users
@@ -441,6 +467,7 @@ interface GenerationContext {
 **Decision:** **Handlebars templates** for now, AST later if needed
 
 **Rationale:**
+
 - Simpler to implement and maintain
 - Easy for users to customize templates
 - Sufficient for initial version
@@ -449,11 +476,13 @@ interface GenerationContext {
 ### Authentication Handling
 
 **Decision:** **Capture and replay** approach
+
 - Store auth headers/cookies from capture session
 - Inject into generated tools
 - User responsible for keeping credentials current
 
 **Rationale:**
+
 - MCP server shouldn't store sensitive credentials long-term
 - Simpler than implementing OAuth flows for arbitrary sites
 - User controls their own auth tokens
@@ -519,17 +548,20 @@ Output: {
 
 ## Success Metrics
 
-### Phase 1-2 Success Criteria:
+### Phase 1-2 Success Criteria
+
 - [ ] MCP server connects to Claude Desktop
 - [ ] Can capture network traffic from any website
 - [ ] Captured data saved correctly to JSON files
 
-### Phase 3-4 Success Criteria:
+### Phase 3-4 Success Criteria
+
 - [ ] Correctly identifies REST API patterns in 80%+ of sites
 - [ ] Generates runnable export scripts without manual editing
 - [ ] Handles authentication for cookie and bearer token sites
 
-### Phase 5-6 Success Criteria:
+### Phase 5-6 Success Criteria
+
 - [ ] Search returns results in <100ms for 10K+ requests
 - [ ] Generated tools successfully export data from 5+ different websites
 - [ ] Clear documentation enables new users to get started in <10 minutes
@@ -538,18 +570,21 @@ Output: {
 
 ## Testing Strategy
 
-### Unit Tests:
+### Unit Tests
+
 - Pattern matching algorithms
 - Data model inference
 - Template rendering
 - Storage operations
 
-### Integration Tests:
+### Integration Tests
+
 - End-to-end capture → analyze → generate workflow
 - Browser automation with real websites
 - Generated tool execution
 
-### Manual Testing Sites:
+### Manual Testing Sites
+
 1. **Simple REST API** (e.g., JSONPlaceholder) - baseline
 2. **Cookie auth** (e.g., GitHub logged in)
 3. **Bearer token** (e.g., API with JWT)
@@ -560,7 +595,8 @@ Output: {
 
 ## Future Enhancements (Post-MVP)
 
-### Advanced Features:
+### Advanced Features
+
 - **GraphQL support** - detect and generate GraphQL queries
 - **WebSocket capture** - real-time data streams
 - **Form submission** - automated POST/PUT operations
@@ -570,13 +606,15 @@ Output: {
 - **Scheduling** - automated periodic exports
 - **Cloud deployment** - run as a service
 
-### Code Quality:
+### Code Quality
+
 - Comprehensive test suite (Jest)
 - CI/CD pipeline
 - Performance benchmarks
 - Security audit
 
-### Community:
+### Community
+
 - Plugin system for custom analyzers
 - Template marketplace
 - Community-contributed site profiles
@@ -587,27 +625,35 @@ Output: {
 ## Risk Mitigation
 
 ### Risk 1: Anti-bot Detection
-**Mitigation:** 
+
+**Mitigation:**
+
 - Use Playwright's stealth mode
 - Fallback to Puppeteer-extra-stealth
 - Allow manual browser sessions
 - Implement delays and randomization
 
 ### Risk 2: Complex Authentication
+
 **Mitigation:**
+
 - Start with simple cookie/token auth
 - Document manual token extraction process
 - Future: OAuth helper tools
 
 ### Risk 3: Infinite Variations in APIs
+
 **Mitigation:**
+
 - Focus on common REST patterns (80/20 rule)
 - Make templates customizable
 - Provide manual override options
 - Build pattern recognition incrementally
 
 ### Risk 4: Breaking Changes in MCP SDK
+
 **Mitigation:**
+
 - Pin to stable SDK version
 - Monitor SDK releases
 - Maintain compatibility layer
@@ -616,7 +662,7 @@ Output: {
 
 ## Getting Started (Developer)
 
-### Setup Development Environment:
+### Setup Development Environment
 
 ```bash
 # Clone/navigate to project
@@ -632,16 +678,17 @@ pnpm run dev
 npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
-### Development Workflow:
+### Development Workflow
 
 1. Edit source files in `src/`
 2. TypeScript compiles automatically (with `--watch`)
 3. Test with MCP Inspector or Claude Desktop
 4. Iterate quickly with hot reload
 
-### First Implementation Task:
+### First Implementation Task
 
 Start with `src/index.ts` - set up the MCP server scaffold:
+
 ```typescript
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -656,7 +703,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
 ## Questions to Resolve
 
-### Open Design Questions:
+### Open Design Questions
 
 1. **Browser persistence:** Should browser sessions persist between tool calls, or start fresh each time?
    - **Tradeoff:** Persistent = faster, maintains auth BUT more complex state management
@@ -679,20 +726,24 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
 ## Resources & References
 
-### MCP Documentation:
+### MCP Documentation
+
 - [MCP Specification](https://modelcontextprotocol.io/docs)
 - [SDK TypeScript](https://github.com/modelcontextprotocol/typescript-sdk)
 - [Example Servers](https://github.com/modelcontextprotocol/servers)
 
-### Browser Automation:
+### Browser Automation
+
 - [Playwright Docs](https://playwright.dev/)
 - [Puppeteer Extra Stealth](https://github.com/berstend/puppeteer-extra/tree/master/packages/puppeteer-extra-plugin-stealth)
 
-### Pattern Recognition:
+### Pattern Recognition
+
 - REST API design patterns
 - OpenAPI/Swagger specifications (for reference)
 
-### Similar Projects (Inspiration):
+### Similar Projects (Inspiration)
+
 - Postman API capture
 - Hoppscotch
 - Insomnia HTTP client
