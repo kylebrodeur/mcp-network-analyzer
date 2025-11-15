@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.log
+.env
+.DS_Store
+
+# Browser data
+browser-data/
+captured-requests.json
+captured-responses.json
+analysis.json
+
+# Exported data
+exported-data/
+*.sqlite
+*.db
