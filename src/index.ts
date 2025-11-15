@@ -5,6 +5,8 @@ import { McpServer, type ToolCallback } from '@modelcontextprotocol/sdk/server/m
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { captureNetworkRequests } from './tools/capture.js';
+
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
 
@@ -90,7 +92,97 @@ const registerPlaceholderTools = () => {
         'Launches a Playwright/Puppeteer session, persists auth if requested, and records HTTP traffic into data/captures/.',
       inputSchema: captureNetworkRequestsSchema.shape
     },
-    makeNotImplementedHandler('capture_network_requests') as ToolCallback<typeof captureNetworkRequestsSchema.shape>
+    async ({ url, waitForNetworkIdleMs, sessionId, includeResourceTypes, excludeResourceTypes, ignoreStaticAssets }) => {
+      try {
+        const result = await captureNetworkRequests({
+          url,
+          waitForNetworkIdleMs,
+          sessionId,
+          includeResourceTypes,
+          excludeResourceTypes,
+          ignoreStaticAssets
+        });
+
+        if (!result.success) {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: `Failed to capture network requests: ${result.error}`
+              }
+            ],
+            isError: true
+          };
+        }
+
+        const { analysis } = result;
+        
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# Network Capture Complete',
+                '',
+                `**Capture ID:** ${result.captureId}`,
+                `**Target URL:** ${url}`,
+                `**Total Requests:** ${result.totalRequests}`,
+                `**Total Responses:** ${result.totalResponses}`,
+                '',
+                '## 📊 Request Type Breakdown',
+                ...Object.entries(analysis.requestTypeBreakdown).map(
+                  ([type, count]) => `- ${type}: ${count}`
+                ),
+                '',
+                '## 🌐 Domains Accessed',
+                ...result.domains.map(domain => `- ${domain}`),
+                '',
+                '## 🔌 API Endpoints Discovered',
+                analysis.apiEndpoints.length > 0
+                  ? analysis.apiEndpoints
+                      .map(
+                        ep =>
+                          `- ${ep.method} ${ep.url}${ep.hasBody ? ' (with body)' : ''}`
+                      )
+                      .join('\\n')
+                  : '- No API endpoints detected (only static resources)',
+                '',
+                '## 🔐 Authentication Analysis',
+                `**Cookie-based:** ${analysis.authenticationHints.cookieBased ? 'Yes' : 'No'}`,
+                analysis.authenticationHints.cookies.length > 0
+                  ? `**Cookies detected:** ${analysis.authenticationHints.cookies.slice(0, 5).join(', ')}${analysis.authenticationHints.cookies.length > 5 ? ` (+${analysis.authenticationHints.cookies.length - 5} more)` : ''}`
+                  : '',
+                analysis.authenticationHints.customHeaders.length > 0
+                  ? `**Custom headers:** ${analysis.authenticationHints.customHeaders.join(', ')}`
+                  : '',
+                `**Bearer token:** ${analysis.authenticationHints.bearerToken ? 'Yes' : 'No'}`,
+                '',
+                '## 📁 Data Saved',
+                `- Complete session: ${result.sessionPath}/session.json`,
+                `- Requests: ${result.sessionPath}/requests.json`,
+                `- Responses: ${result.sessionPath}/responses.json`,
+                `- Metadata: ${result.sessionPath}/metadata.json`,
+                '',
+                '## 🎯 Recommended Next Steps',
+                ...analysis.suggestedNextSteps.map((step, i) => `${i + 1}. ${step}`)
+              ]
+                .filter(line => line !== '')
+                .join('\\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Error capturing network requests: ${error instanceof Error ? error.message : String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
   );
 
   server.registerTool(

@@ -1,0 +1,9 @@
+{
+	"servers": {
+		"blaxel-docs": {
+			"url": "https://docs.blaxel.ai/mcp",
+			"type": "http"
+		}
+	},
+	"inputs": []
+}
