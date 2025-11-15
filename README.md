@@ -19,7 +19,7 @@ pnpm run build
 
 ## Storage Modes
 
-MCP Network Analyzer supports two storage modes:
+MCP Network Analyzer supports three storage modes:
 
 ### Local Mode (Default)
 Stores all captured data in local file system.
@@ -61,6 +61,30 @@ node dist/index.js
 - `MCP_CLOUD_ACCESS_KEY_ID` - Access key/credential
 - `MCP_CLOUD_SECRET_ACCESS_KEY` - Secret key/credential
 
+### Blaxel Mode (MCP Hosting)
+Integrates with [Blaxel](https://blaxel.ai) hosting service for optimized MCP storage.
+
+```bash
+# Blaxel hosting
+MCP_STORAGE_MODE=blaxel \
+BLAXEL_PROJECT_ID=your-project-id \
+BLAXEL_API_KEY=your-api-key \
+node dist/index.js
+
+# Optional: Custom Blaxel endpoint
+BLAXEL_ENDPOINT=https://api.custom.blaxel.ai \
+MCP_STORAGE_MODE=blaxel \
+BLAXEL_PROJECT_ID=your-project-id \
+BLAXEL_API_KEY=your-api-key \
+node dist/index.js
+```
+
+**Blaxel Configuration Environment Variables:**
+- `MCP_STORAGE_MODE` - Set to `blaxel` for Blaxel hosting
+- `BLAXEL_PROJECT_ID` - Your Blaxel project identifier
+- `BLAXEL_API_KEY` - Your Blaxel API key (optional for local dev)
+- `BLAXEL_ENDPOINT` - Custom endpoint (optional, defaults to https://api.blaxel.ai)
+
 ## Usage with Claude Desktop
 
 Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
@@ -91,6 +115,23 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
         "MCP_CLOUD_REGION": "us-east-1",
         "MCP_CLOUD_ACCESS_KEY_ID": "your-access-key",
         "MCP_CLOUD_SECRET_ACCESS_KEY": "your-secret-key"
+      }
+    }
+  }
+}
+```
+
+### Blaxel Mode (Hosted MCP)
+```json
+{
+  "mcpServers": {
+    "network-analyzer": {
+      "command": "node",
+      "args": ["/Users/kylebrodeur/mcp-network-analyzer/dist/index.js"],
+      "env": {
+        "MCP_STORAGE_MODE": "blaxel",
+        "BLAXEL_PROJECT_ID": "your-project-id",
+        "BLAXEL_API_KEY": "your-api-key"
       }
     }
   }

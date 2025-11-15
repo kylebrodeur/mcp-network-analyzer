@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Simple test script to verify dual-mode storage functionality
- * Tests both local and cloud storage configurations
+ * Simple test script to verify storage functionality
+ * Tests local, cloud, and Blaxel storage configurations
  */
 
 import { Config } from '../dist/lib/config.js';
@@ -117,6 +117,45 @@ async function testCloudMode() {
   }
 }
 
+async function testBlaxelMode() {
+  console.log('\n=== Testing Blaxel Mode ===');
+  
+  // Reset and configure for Blaxel mode
+  Config.reset();
+  Storage.resetAdapter();
+  process.env.MCP_STORAGE_MODE = 'blaxel';
+  process.env.BLAXEL_PROJECT_ID = 'test-project';
+  process.env.BLAXEL_API_KEY = 'test-api-key';
+  
+  const config = Config.getInstance();
+  console.log('Mode:', config.getMode());
+  console.log('Is Blaxel Mode:', config.isBlaxelMode());
+  
+  // Initialize storage
+  try {
+    await Storage.ensureDirectories();
+    console.log('Data Directory:', Storage.getDataDirectory());
+    
+    // Create and save a test session
+    const session = createMockSession();
+    console.log('Session ID:', session.id);
+    
+    const result = await Storage.saveCaptureSession(session);
+    console.log('Save Result:', result.success ? '✓ Success' : '✗ Failed');
+    if (result.path) {
+      console.log('Saved to:', result.path);
+    }
+    if (result.error) {
+      console.error('Error:', result.error);
+    }
+    
+    return result.success;
+  } catch (error) {
+    console.error('Error during Blaxel mode test:', error.message);
+    return false;
+  }
+}
+
 async function testConfigurationSwitch() {
   console.log('\n=== Testing Configuration Switch ===');
   
@@ -128,34 +167,35 @@ async function testConfigurationSwitch() {
   let config = Config.getInstance();
   console.log('Initial mode:', config.getMode());
   
-  // Programmatically switch to cloud
+  // Programmatically switch to Blaxel
   config.updateConfig({
-    mode: 'cloud',
-    cloudStorage: {
-      provider: 'aws-s3',
-      bucket: 'test-bucket',
-      region: 'us-east-1'
+    mode: 'blaxel',
+    blaxelStorage: {
+      projectId: 'test-project',
+      apiKey: 'test-key'
     }
   });
   
   console.log('Updated mode:', config.getMode());
-  console.log('Cloud config:', config.getCloudStorageConfig());
+  console.log('Blaxel config:', config.getBlaxelStorageConfig());
   
-  return config.getMode() === 'cloud';
+  return config.getMode() === 'blaxel';
 }
 
 async function main() {
-  console.log('MCP Network Analyzer - Dual-Mode Storage Test\n');
+  console.log('MCP Network Analyzer - Storage Mode Test\n');
   
   const results = {
     local: false,
     cloud: false,
+    blaxel: false,
     switch: false
   };
   
   try {
     results.local = await testLocalMode();
     results.cloud = await testCloudMode();
+    results.blaxel = await testBlaxelMode();
     results.switch = await testConfigurationSwitch();
   } catch (error) {
     console.error('\nTest error:', error);
@@ -164,9 +204,10 @@ async function main() {
   console.log('\n=== Test Results ===');
   console.log('Local Mode:', results.local ? '✓ PASS' : '✗ FAIL');
   console.log('Cloud Mode:', results.cloud ? '✓ PASS' : '✗ FAIL');
+  console.log('Blaxel Mode:', results.blaxel ? '✓ PASS' : '✗ FAIL');
   console.log('Config Switch:', results.switch ? '✓ PASS' : '✗ FAIL');
   
-  const allPassed = results.local && results.cloud && results.switch;
+  const allPassed = results.local && results.cloud && results.blaxel && results.switch;
   console.log('\nOverall:', allPassed ? '✓ ALL TESTS PASSED' : '✗ SOME TESTS FAILED');
   
   process.exit(allPassed ? 0 : 1);
