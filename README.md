@@ -230,6 +230,7 @@ The captured data will include:
 
 - ✅ **Phase 1 Complete**: MCP server scaffold with tool registration
 - ✅ **Phase 2 Complete**: Network capture tool with browser automation  
+- ✅ **Phase 2.5 Complete**: Blaxel deployment with HTTP/Streamable HTTP transport
 - ✅ **Phase 3 Complete**: Analysis and pattern discovery tools (`analyze_captured_data`, `discover_api_patterns`)
 - ⏳ **Phase 4 Planned**: Export tool code generation (`generate_export_tool`)
 - ⏳ **Phase 5 Planned**: Data search and query capabilities (`search_exported_data`)
@@ -242,6 +243,8 @@ The captured data will include:
 - API pattern discovery (REST, pagination, rate limiting)
 - Data model inference from responses
 - Multi-mode storage: local, cloud (S3/GCS/Azure), and Blaxel
+- **Production deployment on Blaxel with private workspace authentication**
+- **Live endpoint**: `https://run.blaxel.ai/kylebrodeur/functions/mcp-network-analyzer/mcp`
 
 See [PLAN.md](docs/PLAN.md) for detailed roadmap.
 

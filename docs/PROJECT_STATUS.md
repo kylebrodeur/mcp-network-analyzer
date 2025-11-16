@@ -15,18 +15,17 @@
 - Network traffic capture and interception
 - Multi-mode storage (local, cloud, Blaxel)
 - HTTP server with Express.js and SSE streaming
+- **Blaxel production deployment with private workspace auth**
+- **Live at**: `https://run.blaxel.ai/kylebrodeur/functions/mcp-network-analyzer/mcp`
+- Tested with MCP Inspector on deployed Blaxel endpoint
 - Comprehensive documentation and testing
-
-⏳ **In Progress:**
-
-- Testing with MCP Inspector (HTTP mode)
-- Blaxel hosting deployment preparation
 
 🚧 **Next Up:**
 
-- Phase 3: Analysis tools implementation
-- Phase 4: Code generation
-- Phase 5: Data search and query
+- Phase 3: Complete analysis tools implementation (analyze_captured_data, discover_api_patterns)
+- Phase 4: Code generation (generate_export_tool)
+- Phase 5: Data search and query (search_exported_data)
+- Test full workflow on Blaxel deployment
 
 ---
 
