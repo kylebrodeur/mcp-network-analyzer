@@ -10,14 +10,16 @@
 ✅ **Completed:**
 
 - MCP server infrastructure with all 5 tool schemas
+- Dual transport modes: stdio and HTTP/Streamable HTTP
 - Browser automation with Playwright + stealth mode
 - Network traffic capture and interception
 - Multi-mode storage (local, cloud, Blaxel)
+- HTTP server with Express.js and SSE streaming
 - Comprehensive documentation and testing
 
 ⏳ **In Progress:**
 
-- Testing with MCP Inspector and Claude Desktop
+- Testing with MCP Inspector (HTTP mode)
 - Blaxel hosting deployment preparation
 
 🚧 **Next Up:**
@@ -32,12 +34,18 @@
 
 ### 1. Core Infrastructure ✅
 
-**MCP Server** (`src/index.ts`)
+**MCP Server** (`src/index.ts` and `src/index-http.ts`)
 
 - Full MCP protocol implementation using official SDK
+- Dual transport modes:
+  - **Stdio transport** (`index.ts`) - For Claude Desktop and local Inspector
+  - **HTTP/Streamable HTTP transport** (`index-http.ts`) - For Blaxel hosting and remote connections
 - 5 registered tools with Zod schema validation
 - Proper error handling and graceful shutdown
 - Structured logging to STDERR (preserves STDOUT for MCP)
+- Express.js server with SSE streaming support
+- Health check endpoint at `/health`
+- MCP endpoints at `/mcp` (GET for SSE, POST for messages)
 
 **Development Environment** (`.vscode/`, `package.json`)
 
@@ -415,10 +423,16 @@ Search and query captured data.
 pnpm install
 
 # Development mode (watch + rebuild)
-pnpm run dev
+pnpm run dev          # stdio mode
+pnpm run dev:http     # HTTP mode
 
 # Build for production
 pnpm run build
+
+# Start production servers
+node dist/index.js         # stdio mode
+pnpm run start:http        # HTTP mode (port 3000)
+PORT=3001 node dist/index-http.js  # HTTP mode (custom port)
 
 # Type checking
 pnpm run type-check
@@ -427,7 +441,8 @@ pnpm run type-check
 pnpm run clean
 
 # Test with MCP Inspector
-npx @modelcontextprotocol/inspector node dist/index.js
+npx @modelcontextprotocol/inspector node dist/index.js  # stdio mode
+npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport streamable-http  # HTTP mode
 ```
 
 ---

@@ -85,6 +85,50 @@ node dist/index.js
 - `BLAXEL_API_KEY` - Your Blaxel API key (optional for local dev)
 - `BLAXEL_ENDPOINT` - Custom endpoint (optional, defaults to https://api.blaxel.ai)
 
+## Transport Modes
+
+MCP Network Analyzer supports two transport modes:
+
+### Stdio Transport (Default)
+Used for local testing with Claude Desktop and MCP Inspector. This is the default mode when running `node dist/index.js`.
+
+```bash
+pnpm run build
+node dist/index.js
+```
+
+### HTTP/Streamable HTTP Transport
+Required for Blaxel cloud hosting and remote MCP connections. Uses Express.js with Server-Sent Events (SSE) for streaming.
+
+```bash
+# Start HTTP server (default port 3000)
+pnpm run start:http
+
+# Development mode with watch
+pnpm run dev:http
+
+# Custom port
+PORT=3001 node dist/index-http.js
+
+# Blaxel hosting (uses BL_SERVER_HOST and BL_SERVER_PORT)
+BL_SERVER_HOST=0.0.0.0 BL_SERVER_PORT=8080 node dist/index-http.js
+```
+
+**HTTP Mode Endpoints:**
+- `POST /mcp` - MCP message endpoint
+- `GET /mcp` - SSE streaming endpoint
+- `GET /health` - Health check endpoint
+
+**Test HTTP mode with MCP Inspector:**
+
+```bash
+# Start the HTTP server
+PORT=3001 node dist/index-http.js &
+
+# Connect Inspector to HTTP endpoint
+npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport streamable-http
+```
+
 ## Usage with Claude Desktop
 
 Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
@@ -288,16 +332,29 @@ Search through previously exported data.
 
 The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is a visual debugging tool for testing MCP servers. It provides an interactive UI to test tools, inspect requests/responses, and debug issues.
 
-### Quick Start
+### Quick Start - Stdio Mode
 
-Test your MCP server with the Inspector:
+Test your MCP server with the Inspector using stdio transport:
 
 ```bash
 # Build the server first
 pnpm run build
 
-# Launch with Inspector
+# Launch with Inspector (stdio mode)
 npx @modelcontextprotocol/inspector node dist/index.js
+```
+
+### Quick Start - HTTP Mode
+
+Test the HTTP/Streamable HTTP transport (required for Blaxel hosting):
+
+```bash
+# Terminal 1: Start the HTTP server
+pnpm run build
+PORT=3001 node dist/index-http.js
+
+# Terminal 2: Connect Inspector to HTTP endpoint
+npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport streamable-http
 ```
 
 The Inspector will:
@@ -364,10 +421,15 @@ npx @modelcontextprotocol/inspector --cli node dist/index.js \
 pnpm install
 
 # Run in development mode (with watch)
-pnpm run dev
+pnpm run dev          # stdio mode
+pnpm run dev:http     # HTTP mode
 
 # Build
 pnpm run build
+
+# Start production servers
+node dist/index.js         # stdio mode
+pnpm run start:http        # HTTP mode
 
 # Type check
 pnpm run type-check
@@ -380,7 +442,8 @@ pnpm run clean
 
 ```text
 src/
-├── index.ts              # MCP server entry point
+├── index.ts              # MCP server entry point (stdio transport)
+├── index-http.ts         # HTTP server entry point (streamable HTTP transport)
 ├── tools/
 │   ├── capture.ts        # Network capture tool
 │   ├── analyze.ts        # Analysis tool
