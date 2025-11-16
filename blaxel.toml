@@ -2,6 +2,7 @@
 # Documentation: https://docs.blaxel.ai/Functions/Deploy-a-function
 
 name = "mcp-network-analyzer"
+workspace = "kylebrodeur"
 type = "function"
 
 # Environment variables (non-secrets)
