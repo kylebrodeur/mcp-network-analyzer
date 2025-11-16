@@ -231,22 +231,28 @@ The captured data will include:
 - ✅ **Phase 1 Complete**: MCP server scaffold with tool registration
 - ✅ **Phase 2 Complete**: Network capture tool with browser automation  
 - ✅ **Phase 2.5 Complete**: Blaxel deployment with HTTP/Streamable HTTP transport
-- ✅ **Phase 3 Complete**: Analysis and pattern discovery tools (`analyze_captured_data`, `discover_api_patterns`)
-- ⏳ **Phase 4 Planned**: Export tool code generation (`generate_export_tool`)
-- ⏳ **Phase 5 Planned**: Data search and query capabilities (`search_exported_data`)
+- 🚧 **Phase 3 In Progress**: Analysis and pattern discovery tools (hackathon priority)
+- 🚧 **Phase 4 In Progress**: Export code generation with Claude API (hackathon priority)
+- 🆕 **Phase 4.5 Planned**: Modal + Gradio 6 web UI (hackathon demo)
+- ⏳ **Phase 5 Planned**: Data search and query capabilities
 
 **Current Features:**
 
 - Full network traffic capture with Playwright
-- Request/response analysis with endpoint grouping
-- Authentication method detection (cookies, bearer tokens, custom headers)
-- API pattern discovery (REST, pagination, rate limiting)
-- Data model inference from responses
 - Multi-mode storage: local, cloud (S3/GCS/Azure), and Blaxel
 - **Production deployment on Blaxel with private workspace authentication**
 - **Live endpoint**: `https://run.blaxel.ai/kylebrodeur/functions/mcp-network-analyzer/mcp`
 
-See [PLAN.md](docs/PLAN.md) for detailed roadmap.
+**Coming Soon (Hackathon):**
+
+- Request/response analysis with endpoint grouping
+- Authentication method detection (cookies, bearer tokens, custom headers)
+- API pattern discovery (REST, pagination, rate limiting)
+- **AI-powered code generation** (TypeScript, Python, Go, JavaScript)
+- **Gradio 6 web UI on Modal** for visualization and interaction
+- Data model inference from responses
+
+See [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for detailed roadmap.
 
 ## Available Tools
 

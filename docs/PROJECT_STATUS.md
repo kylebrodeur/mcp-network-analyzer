@@ -20,12 +20,20 @@
 - Tested with MCP Inspector on deployed Blaxel endpoint
 - Comprehensive documentation and testing
 
-🚧 **Next Up:**
+🚧 **Next Up - Hackathon Focus:**
 
-- Phase 3: Complete analysis tools implementation (analyze_captured_data, discover_api_patterns)
-- Phase 4: Code generation (generate_export_tool)
-- Phase 5: Data search and query (search_exported_data)
-- Test full workflow on Blaxel deployment
+- **Phase 3**: Complete analysis tools implementation
+  - `analyze_captured_data` - Pattern detection with rule-based matching
+  - `discover_api_patterns` - REST, pagination, auth detection
+- **Phase 4**: Code generation with Claude API
+  - `generate_export_tool` - Multi-language export script generation
+  - Direct Anthropic API integration (no Modal needed for this)
+- **Modal + Gradio 6**: Separate UI deployment for hackathon
+  - Beautiful web interface with Gradio 6
+  - Code generation and API review tabs
+  - Visualization charts for captured data
+  - Calls Blaxel MCP server for data capture
+- **Phase 5**: Data search and query (if time permits)
 
 ---
 
@@ -267,29 +275,59 @@ Search and query captured data:
 - ✅ Capture tool
 - ✅ Multi-mode storage
 - ✅ Session management
+- ✅ HTTP/Streamable HTTP transport
+- ✅ Blaxel production deployment
 
-### Phase 3: Analysis Tools ⏳ NEXT
+### Phase 3: Analysis Tools 🚧 IN PROGRESS (Hackathon Priority)
 
 - [ ] Basic analyzer (`src/lib/analyzer.ts`)
-- [ ] `analyze_captured_data` tool
+- [ ] `analyze_captured_data` tool - Rule-based pattern matching
+  - Group requests by domain/path patterns (regex)
+  - Detect REST patterns (GET /users, GET /users/:id)
+  - Identify authentication headers
+  - Content type analysis
+  - Status code distribution
 - [ ] Pattern matcher (`src/lib/pattern-matcher.ts`)
-- [ ] `discover_api_patterns` tool
-- [ ] Authentication detection
-- [ ] Data structure inference
+- [ ] `discover_api_patterns` tool - Advanced detection
+  - Pagination detection (page=, offset=, limit= params)
+  - Authentication methods (Authorization, Cookie headers)
+  - Rate limiting (X-RateLimit-* headers)
+  - CRUD operation identification
+  - Data relationship inference
 
-**Estimated Time:** 3-5 days
+**Estimated Time:** 3-5 days → **Target: 2 days for hackathon**
 
-### Phase 4: Code Generation 🚧 PLANNED
+### Phase 4: Code Generation 🚧 NEXT (Hackathon Priority)
 
-- [ ] Template engine (`src/lib/code-generator.ts`)
-- [ ] Export script template
+- [ ] Code generator (`src/lib/code-generator.ts`)
+- [ ] Anthropic API integration (direct, no Modal)
+- [ ] Template-based code generation with Claude
 - [ ] `generate_export_tool` tool
-- [ ] Configurable output formats
-- [ ] Error handling and retry logic
+  - Multi-language support (TypeScript, Python, Go, JavaScript)
+  - Authentication injection
+  - Error handling and retry logic
+  - Rate limiting support
+  - Pagination handling
 
-**Estimated Time:** 3-4 days
+**Estimated Time:** 3-4 days → **Target: 2 days for hackathon**
 
-### Phase 5: Data Search 🚧 PLANNED
+### Phase 4.5: Modal + Gradio UI 🆕 HACKATHON ADDITION
+
+- [ ] Modal app setup (`modal_app/gradio_ui.py`)
+- [ ] Gradio 6 interface with tabs:
+  - 📡 Capture tab (calls Blaxel MCP server)
+  - 🤖 Generate Code tab (Claude API integration)
+  - 📊 Review API tab (Claude API analysis)
+  - 📈 Visualize tab (charts and graphs)
+- [ ] Anthropic secret configuration on Modal
+- [ ] Deploy to Modal
+- [ ] Connect to Blaxel MCP endpoint
+
+**Estimated Time:** 2-3 hours setup, 2-3 hours polish
+
+**Purpose:** Separate web UI for hackathon demo, showcasing Gradio 6 + Claude integration
+
+### Phase 5: Data Search 🚧 PLANNED (Post-Hackathon)
 
 - [ ] SQLite indexing
 - [ ] `search_exported_data` tool
@@ -318,6 +356,7 @@ Search and query captured data:
 - **Runtime:** Node.js
 - **Package Manager:** pnpm
 - **MCP SDK:** @modelcontextprotocol/sdk
+- **Deployment:** Blaxel (serverless MCP hosting)
 
 ### Browser Automation
 
@@ -336,10 +375,24 @@ Search and query captured data:
 - **Runtime:** Zod v3.23.8
 - **Compile-time:** TypeScript strict mode
 
+### AI & Code Generation (Phase 4)
+
+- **AI Model:** Claude 3.5 Sonnet (Anthropic API)
+- **Integration:** Direct API calls from Blaxel deployment
+- **Use Cases:** Export code generation, API pattern analysis
+
+### Modal + Gradio (Hackathon UI)
+
+- **UI Framework:** Gradio 6
+- **Deployment:** Modal (serverless)
+- **AI Integration:** Anthropic API for code generation and review
+- **Data Viz:** Plotly, Pandas
+- **Purpose:** Separate web interface for hackathon demo
+
 ### Future
 
-- **Templates:** Handlebars
-- **Search:** SQLite with FTS5
+- **Templates:** Handlebars (Phase 4)
+- **Search:** SQLite with FTS5 (Phase 5)
 - **Testing:** Jest (planned)
 
 ---
