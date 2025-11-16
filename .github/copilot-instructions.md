@@ -28,3 +28,8 @@ These instructions tell GitHub Copilot (and other codegen agents) how to collabo
 - Use the provided pnpm scripts (`dev`, `build`, `type-check`, `clean`).
 - Keep VS Code tasks/launch configs in sync with new scripts.
 - When adding a new tool, also document its inputs/outputs in README and PLAN.
+
+## Documentation
+
+- Active documentation is in `/README.md`, `/docs/PROJECT_STATUS.md`, `/docs/PLAN.md`, `/docs/DUAL_MODE_ARCHITECTURE.md`, and `/docs/BLAXEL_INTEGRATION.md`.
+- **Ignore archived documentation:** Files in `/docs/archive/` are historical and should not be referenced for current implementation decisions.

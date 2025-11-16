@@ -5,6 +5,8 @@
 **Updated:** November 15, 2025  
 **Status:** Phase 2 Complete - Network Capture Implemented
 
+> **Note:** For current project status and what's completed, see [PROJECT_STATUS.md](PROJECT_STATUS.md). This file contains the detailed implementation plan and technical specifications.
+
 ---
 
 ## Project Overview

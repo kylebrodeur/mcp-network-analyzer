@@ -7,6 +7,7 @@ The MCP Network Analyzer integrates with [Blaxel](https://blaxel.ai), a hosting 
 ## What is Blaxel?
 
 Blaxel is a hosting service that provides:
+
 - **Cloud Storage**: Optimized storage for MCP capture sessions
 - **Data Sharing**: Easy sharing of captured network data
 - **MCP Hosting**: Deploy and host MCP servers in the cloud
@@ -21,6 +22,7 @@ Visit [blaxel.ai](https://blaxel.ai) and create an account (if not already done)
 ### 2. Get Your Credentials
 
 From your Blaxel dashboard, obtain:
+
 - **Project ID**: Your unique project identifier
 - **API Key**: Authentication token for API access
 
@@ -143,6 +145,7 @@ The Blaxel storage adapter (`src/lib/blaxel-storage-adapter.ts`) provides:
 ### Current Status
 
 **✅ Implemented:**
+
 - Configuration system
 - Storage adapter interface
 - Mock upload functionality
@@ -150,6 +153,7 @@ The Blaxel storage adapter (`src/lib/blaxel-storage-adapter.ts`) provides:
 - Test coverage
 
 **🔜 Planned:**
+
 - Production Blaxel API integration
 - Authentication with API keys
 - Retry logic and error recovery
@@ -166,6 +170,7 @@ node test/test-dual-mode.js
 ```
 
 Expected output:
+
 ```
 === Testing Blaxel Mode ===
 Mode: blaxel
@@ -184,21 +189,25 @@ Save Result: ✓ Success
 ## Benefits
 
 ### 1. **No Infrastructure Management**
+
 - No need to manage S3 buckets or cloud storage
 - Blaxel handles all infrastructure concerns
 - Focus on developing your MCP server
 
 ### 2. **MCP-Optimized Storage**
+
 - Storage format optimized for MCP workloads
 - Fast retrieval and querying
 - Built-in data organization
 
 ### 3. **Easy Sharing**
+
 - Share captured sessions via URLs
 - Collaborative debugging and analysis
 - Team access to capture data
 
 ### 4. **Scalability**
+
 - Automatically scales with your needs
 - No storage limits
 - Pay only for what you use
@@ -212,6 +221,7 @@ Save Result: ✓ Success
 ### Issue: "Failed to upload to Blaxel"
 
 **Solutions**:
+
 1. Check network connectivity
 2. Verify API key is valid
 3. Ensure project ID is correct
@@ -224,11 +234,13 @@ Save Result: ✓ Success
 ## Support
 
 For Blaxel-specific issues:
+
 - Visit [docs.blaxel.ai](https://docs.blaxel.ai)
 - Contact Blaxel support
 - Check Blaxel service status
 
 For integration issues:
+
 - Open an issue in this repository
 - Check implementation in `src/lib/blaxel-storage-adapter.ts`
 - Review test output from `test/test-dual-mode.js`
@@ -251,15 +263,6 @@ To migrate from local to Blaxel storage:
 2. Configure Blaxel mode
 3. Re-run captures (data will go to Blaxel)
 4. Optionally upload historical data via Blaxel API
-
-### From Other Cloud Storage
-
-To migrate from AWS S3/GCS/Azure:
-
-1. Configure Blaxel mode
-2. New captures will use Blaxel
-3. Historical data remains in previous storage
-4. Optionally migrate historical data via Blaxel API
 
 ## Best Practices
 

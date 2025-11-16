@@ -140,38 +140,75 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
 
 ## Quick Start Example
 
-Once connected to Claude Desktop, you can start capturing network traffic:
+Once connected (via Claude Desktop or MCP Inspector), you can start capturing network traffic:
 
-```
+### Example 1: Simple API Capture
+
+```text
 User: "Capture network traffic from https://jsonplaceholder.typicode.com/posts"
 
-Claude: [Uses capture_network_requests tool]
-Result: Captured 5 requests, 5 responses
-Data saved to: data/captures/session_1731686400000_a1b2c3d4/
+Result: 
+✅ Captured 5 requests, 5 responses
+📊 Discovered 2 API endpoints:
+  - GET /posts
+  - GET /posts/1
+🔐 Authentication: None detected
+📁 Data saved to: data/captures/session_1731686400000_a1b2c3d4/
+```
+
+### Example 2: Full Analysis Workflow
+
+```text
+# 1. Capture traffic
+User: "Capture from https://example.com"
+→ Returns captureId: session_xyz
+
+# 2. Analyze patterns
+User: "Analyze capture session_xyz"
+→ Returns analysisId: analysis_abc
+→ Shows endpoint groups, auth methods, content types
+
+# 3. Discover API patterns
+User: "Discover API patterns from analysis_abc"
+→ Returns discoveryId: discovery_123
+→ Shows REST patterns, pagination, data models
 ```
 
 The captured data will include:
+
 - HTTP methods, URLs, and headers
 - Request/response bodies
 - Timing information
 - Resource types
+- Authentication hints
 
 ## Project Status
 
 - ✅ **Phase 1 Complete**: MCP server scaffold with tool registration
-- ✅ **Phase 2 Complete**: Network capture tool with browser automation
-- 🚧 **Phase 3 In Progress**: Analysis and pattern discovery tools
-- ⏳ **Phase 4 Planned**: Export tool code generation
-- ⏳ **Phase 5 Planned**: Data search and query capabilities
+- ✅ **Phase 2 Complete**: Network capture tool with browser automation  
+- ✅ **Phase 3 Complete**: Analysis and pattern discovery tools (`analyze_captured_data`, `discover_api_patterns`)
+- ⏳ **Phase 4 Planned**: Export tool code generation (`generate_export_tool`)
+- ⏳ **Phase 5 Planned**: Data search and query capabilities (`search_exported_data`)
+
+**Current Features:**
+
+- Full network traffic capture with Playwright
+- Request/response analysis with endpoint grouping
+- Authentication method detection (cookies, bearer tokens, custom headers)
+- API pattern discovery (REST, pagination, rate limiting)
+- Data model inference from responses
+- Multi-mode storage: local, cloud (S3/GCS/Azure), and Blaxel
 
 See [PLAN.md](docs/PLAN.md) for detailed roadmap.
 
 ## Available Tools
 
-### `capture_network_requests` ✅ (Phase 2 - Implemented)
+### `capture_network_requests` ✅ Implemented
+
 Launch a browser session to capture network traffic from a target website.
 
 **Parameters:**
+
 - `url` (string, required): Target website URL
 - `waitForNetworkIdleMs` (number, optional): Wait for additional network activity after page load (max 120000ms)
 - `sessionId` (string, optional): Custom session ID for organizing captures
@@ -180,6 +217,7 @@ Launch a browser session to capture network traffic from a target website.
 - `ignoreStaticAssets` (boolean, optional): Filter out images, stylesheets, fonts, etc. (default: true)
 
 **Returns:**
+
 - `captureId`: Unique identifier for the capture session
 - `sessionPath`: Path to captured data directory
 - `totalRequests`: Number of requests captured
@@ -187,35 +225,42 @@ Launch a browser session to capture network traffic from a target website.
 - `domains`: List of unique domains accessed
 
 **Output Files:**
+
 - `data/captures/{sessionId}/session.json` - Complete capture session
 - `data/captures/{sessionId}/requests.json` - All captured requests
 - `data/captures/{sessionId}/responses.json` - All captured responses
 - `data/captures/{sessionId}/metadata.json` - Session metadata and statistics
 
-### `analyze_captured_data` (Phase 3 - Coming Soon)
+### `analyze_captured_data` ✅ Implemented
+
 Analyze captured network data to identify API patterns and authentication methods.
 
 **Parameters:**
+
 - `captureId` (string, required): ID from capture_network_requests
 - `includeStaticAssets` (boolean, optional): Include static assets in analysis
 - `outputPath` (string, optional): Custom output path for analysis results
 
 **Returns:** Analysis with discovered endpoints, auth headers, and recommendations
 
-### `discover_api_patterns` (Phase 3 - Coming Soon)
+### `discover_api_patterns` ✅ Implemented
+
 Deep analysis of API structure with pattern recognition.
 
 **Parameters:**
+
 - `analysisId` (string, required): ID from analyze_captured_data
 - `minConfidence` (number, optional): Minimum confidence threshold (0-1, default: 0.5)
 - `includeAuthInsights` (boolean, optional): Include authentication analysis
 
 **Returns:** Detailed API patterns, data models, and extraction strategies
 
-### `generate_export_tool` (Phase 4 - Coming Soon)
+### `generate_export_tool` ⏳ Planned
+
 Generate a complete, runnable export script for the discovered API.
 
 **Parameters:**
+
 - `analysisId` (string, required): ID from discover_api_patterns
 - `toolName` (string, required): Name for the generated tool
 - `targetUrl` (string, optional): Override target URL
@@ -225,10 +270,12 @@ Generate a complete, runnable export script for the discovered API.
 
 **Returns:** Path to generated export script with usage instructions
 
-### `search_exported_data` (Phase 5 - Coming Soon)
+### `search_exported_data` ⏳ Planned
+
 Search through previously exported data.
 
 **Parameters:**
+
 - `query` (string, required): Search query
 - `captureId` (string, optional): Limit search to specific capture
 - `statusCode` (number | number[], optional): Filter by HTTP status code
@@ -237,13 +284,86 @@ Search through previously exported data.
 
 **Returns:** Matching items from exported data
 
+## Testing with MCP Inspector
+
+The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is a visual debugging tool for testing MCP servers. It provides an interactive UI to test tools, inspect requests/responses, and debug issues.
+
+### Quick Start
+
+Test your MCP server with the Inspector:
+
+```bash
+# Build the server first
+pnpm run build
+
+# Launch with Inspector
+npx @modelcontextprotocol/inspector node dist/index.js
+```
+
+The Inspector will:
+
+1. Start the MCP proxy server (port 6277)
+2. Open the web UI in your browser (port 6274)
+3. Display a session token for authentication
+4. Connect to your MCP server automatically
+
+### Using the Inspector
+
+- **Test Tools**: Call any tool with a form-based interface
+- **View Responses**: See formatted JSON responses and outputs
+- **Check Logs**: Monitor server logs in real-time
+- **Debug**: Inspect request/response cycles
+- **Export Config**: Generate Claude Desktop config snippets
+
+### With Environment Variables
+
+Pass environment variables for cloud or Blaxel storage:
+
+```bash
+# Cloud storage (AWS S3)
+npx @modelcontextprotocol/inspector \
+  -e MCP_STORAGE_MODE=cloud \
+  -e MCP_CLOUD_PROVIDER=aws-s3 \
+  -e MCP_CLOUD_BUCKET=my-bucket \
+  -e MCP_CLOUD_REGION=us-east-1 \
+  node dist/index.js
+
+# Blaxel hosting
+npx @modelcontextprotocol/inspector \
+  -e MCP_STORAGE_MODE=blaxel \
+  -e BLAXEL_PROJECT_ID=your-project-id \
+  -e BLAXEL_API_KEY=your-api-key \
+  node dist/index.js
+```
+
+### CLI Mode
+
+For scripting and automation:
+
+```bash
+# List available tools
+npx @modelcontextprotocol/inspector --cli node dist/index.js --method tools/list
+
+# Call capture tool
+npx @modelcontextprotocol/inspector --cli node dist/index.js \
+  --method tools/call \
+  --tool-name capture_network_requests \
+  --tool-arg url=https://jsonplaceholder.typicode.com/posts
+
+# Analyze captured data
+npx @modelcontextprotocol/inspector --cli node dist/index.js \
+  --method tools/call \
+  --tool-name analyze_captured_data \
+  --tool-arg captureId=session_1234567890_abc123
+```
+
 ## Development
 
 ```bash
 # Install dependencies
 pnpm install
 
-# Run in development mode
+# Run in development mode (with watch)
 pnpm run dev
 
 # Build
@@ -251,11 +371,14 @@ pnpm run build
 
 # Type check
 pnpm run type-check
+
+# Clean build artifacts
+pnpm run clean
 ```
 
 ## Architecture
 
-```
+```text
 src/
 ├── index.ts              # MCP server entry point
 ├── tools/
