@@ -1,277 +1,458 @@
-# Blaxel Integration Guide
+# Blaxel Deployment Guide
 
 ## Overview
 
-The MCP Network Analyzer integrates with [Blaxel](https://blaxel.ai), a hosting platform optimized for Model Context Protocol (MCP) servers. This integration provides cloud storage and hosting capabilities specifically designed for MCP workloads.
+The MCP Network Analyzer can be deployed to [Blaxel](https://blaxel.ai), a serverless hosting platform optimized for Model Context Protocol (MCP) servers. This guide covers deploying your MCP server to Blaxel's global infrastructure with private workspace-based authentication.
 
 ## What is Blaxel?
 
-Blaxel is a hosting service that provides:
+Blaxel is a serverless computing platform that provides:
 
-- **Cloud Storage**: Optimized storage for MCP capture sessions
-- **Data Sharing**: Easy sharing of captured network data
-- **MCP Hosting**: Deploy and host MCP servers in the cloud
-- **API Access**: RESTful API for programmatic access to stored data
+- **MCP Server Hosting**: Deploy MCP servers as auto-scalable serverless APIs
+- **Streamable HTTP Transport**: Uses HTTP with Server-Sent Events (SSE) for MCP communication
+- **Global Endpoints**: Automatically deployed to Blaxel's Global Agentics Network
+- **Private Authentication**: Workspace-based auth where each user brings their own credentials
+- **Full Observability**: Built-in tracing and monitoring for all requests
+- **Zero Infrastructure**: No servers to manage, automatic scaling
 
-## Setup
+## Authentication Model
 
-### 1. Create a Blaxel Account
+Blaxel uses **private workspace-based authentication** by default:
 
-Visit [blaxel.ai](https://blaxel.ai) and create an account (if not already done).
+- ✅ **Each user authenticates with their own Blaxel API key**
+- ✅ **No need to share your credentials** with end users
+- ✅ **Workspace access control** managed by Blaxel
+- ✅ **Users create free Blaxel accounts** and generate their own API keys
+- ✅ **Secure by default** - no public endpoints without explicit configuration
 
-### 2. Get Your Credentials
+### How It Works
 
-From your Blaxel dashboard, obtain:
+1. You deploy the MCP server to your Blaxel workspace
+2. End users create their own free Blaxel accounts
+3. Users generate API keys from their Blaxel profile (`Profile > Security`)
+4. Users authenticate to your deployed MCP server with their own API keys
+5. Blaxel handles all authorization automatically
 
-- **Project ID**: Your unique project identifier
-- **API Key**: Authentication token for API access
+## Prerequisites
 
-### 3. Configure Environment
+1. **Blaxel CLI**: Install the Blaxel command-line tool
+   ```bash
+   npm install -g @blaxel/cli
+   # or
+   pnpm add -g @blaxel/cli
+   ```
 
-Set the following environment variables:
+2. **Blaxel Account**: Create an account at [blaxel.ai](https://blaxel.ai)
 
-```bash
-export MCP_STORAGE_MODE=blaxel
-export BLAXEL_PROJECT_ID=your-project-id
-export BLAXEL_API_KEY=your-api-key
+3. **Authentication**: Log in via CLI
+   ```bash
+   bl login
+   ```
+
+## Deployment Configuration
+
+The project includes a `blaxel.toml` configuration file:
+
+```toml
+# Blaxel MCP Server Deployment Configuration
+name = "mcp-network-analyzer"
+type = "function"
+
+# Environment variables (non-secrets)
+[env]
+MCP_STORAGE_MODE = "local"
+
+# HTTP trigger configuration
+[[triggers]]
+  id = "trigger-mcp-network-analyzer"
+  type = "http"
+
+[triggers.configuration]
+  path = "functions/mcp-network-analyzer"
+  # Private authentication - users bring their own API keys
+  authenticationType = "private"
 ```
 
-## Usage
+### Key Settings
 
-### Local Development
+- **`type = "function"`**: Deploys as an MCP server (function)
+- **`authenticationType = "private"`**: Requires user authentication (default, secure)
+- **Path**: Creates endpoint at `https://run.blaxel.ai/{YOUR-WORKSPACE}/functions/mcp-network-analyzer/mcp`
 
-For local development and testing, you can run without an API key:
+## Deployment Steps
 
-```bash
-MCP_STORAGE_MODE=blaxel \
-BLAXEL_PROJECT_ID=dev-project \
-node dist/index.js
-```
+### 1. Build Locally
 
-This will operate in mock mode, logging what would be uploaded without making actual API calls.
-
-### Production Deployment
-
-For production use with actual Blaxel hosting:
+First, ensure your server builds successfully:
 
 ```bash
-MCP_STORAGE_MODE=blaxel \
-BLAXEL_PROJECT_ID=your-project-id \
-BLAXEL_API_KEY=your-api-key \
-node dist/index.js
+pnpm install
+pnpm run build
 ```
 
-### Claude Desktop Configuration
+### 2. Test Locally with HTTP Mode
 
-Add to your `claude_desktop_config.json`:
+Test the HTTP transport locally before deploying:
+
+```bash
+# Terminal 1: Start HTTP server
+PORT=3001 node dist/index-http.js
+
+# Terminal 2: Test with MCP Inspector
+npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport streamable-http
+```
+
+### 3. Deploy to Blaxel
+
+Deploy with a single command:
+
+```bash
+bl deploy
+```
+
+Blaxel will:
+- Build your TypeScript project automatically
+- Package dependencies
+- Deploy to Global Agentics Network
+- Provide a global HTTPS endpoint
+
+### 4. Get Your Endpoint
+
+After deployment, your MCP server is available at:
+
+```
+https://run.blaxel.ai/{YOUR-WORKSPACE}/functions/mcp-network-analyzer/mcp
+```
+
+## Usage for End Users
+
+### Step 1: Create Blaxel Account
+
+End users should:
+1. Visit [blaxel.ai](https://blaxel.ai) and create a free account
+2. Navigate to `Profile > Security`
+3. Generate an API key
+
+### Step 2: Connect to the MCP Server
+
+Users can connect using any MCP client with streamable HTTP support:
+
+#### Claude Desktop Configuration
+
+Add to `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "network-analyzer": {
-      "command": "node",
-      "args": ["/path/to/mcp-network-analyzer/dist/index.js"],
-      "env": {
-        "MCP_STORAGE_MODE": "blaxel",
-        "BLAXEL_PROJECT_ID": "your-project-id",
-        "BLAXEL_API_KEY": "your-api-key"
+      "transport": {
+        "type": "streamableHttp",
+        "url": "https://run.blaxel.ai/YOUR-WORKSPACE/functions/mcp-network-analyzer/mcp",
+        "headers": {
+          "X-Blaxel-Authorization": "Bearer USER_API_KEY_HERE"
+        }
       }
     }
   }
 }
 ```
 
-## Features
+#### MCP Inspector
 
-### Automatic Cloud Storage
-
-All captured network sessions are automatically uploaded to Blaxel:
-
-```
-Session captured → Blaxel storage → Available at:
-blaxel://your-project-id/mcp-network-analyzer/captures/session_xxx
-```
-
-### Hosting URLs
-
-Each captured session gets a hosting URL for easy access:
-
-```
-https://api.blaxel.ai/projects/your-project-id/captures/session_xxx
-```
-
-### Data Organization
-
-Data is organized hierarchically in Blaxel:
-
-```
-your-project-id/
-└── mcp-network-analyzer/
-    ├── captures/
-    │   ├── session_xxx/
-    │   │   ├── session.json
-    │   │   ├── requests.json
-    │   │   ├── responses.json
-    │   │   └── metadata.json
-    │   └── session_yyy/
-    │       └── ...
-    ├── analyses/
-    └── generated/
-```
-
-## Custom Endpoints
-
-If you're running a self-hosted Blaxel instance, specify a custom endpoint:
+Test with Inspector:
 
 ```bash
-MCP_STORAGE_MODE=blaxel \
-BLAXEL_ENDPOINT=https://blaxel.yourcompany.com \
-BLAXEL_PROJECT_ID=your-project-id \
-BLAXEL_API_KEY=your-api-key \
-node dist/index.js
+npx @modelcontextprotocol/inspector \
+  https://run.blaxel.ai/YOUR-WORKSPACE/functions/mcp-network-analyzer/mcp \
+  --transport streamable-http \
+  -H "X-Blaxel-Authorization: Bearer USER_API_KEY_HERE"
 ```
 
-## Implementation Details
-
-### Storage Adapter
-
-The Blaxel storage adapter (`src/lib/blaxel-storage-adapter.ts`) provides:
-
-- **Automatic Upload**: Seamlessly uploads capture sessions
-- **Mock Mode**: Works without credentials for development
-- **Error Handling**: Robust error handling and logging
-- **Extensibility**: Ready for production API integration
-
-### Current Status
-
-**✅ Implemented:**
-
-- Configuration system
-- Storage adapter interface
-- Mock upload functionality
-- Environment variable support
-- Test coverage
-
-**🔜 Planned:**
-
-- Production Blaxel API integration
-- Authentication with API keys
-- Retry logic and error recovery
-- Data retrieval methods
-- Session listing and querying
-
-## Testing
-
-Test the Blaxel integration:
+#### cURL Example
 
 ```bash
-npm run build
-node test/test-dual-mode.js
+curl -X POST \
+  "https://run.blaxel.ai/YOUR-WORKSPACE/functions/mcp-network-analyzer/mcp" \
+  -H "Content-Type: application/json" \
+  -H "X-Blaxel-Authorization: Bearer USER_API_KEY_HERE" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-Expected output:
+## Local Development
 
-```
-=== Testing Blaxel Mode ===
-Mode: blaxel
-Is Blaxel Mode: true
-[Blaxel Storage] Initializing Blaxel integration...
-[Blaxel Storage] Project ID: test-project
-[Blaxel Storage] Endpoint: https://api.blaxel.ai
-[Blaxel Storage] Initialized successfully
-Data Directory: blaxel://test-project/mcp-network-analyzer
-Session ID: test_session_xxx
-[Blaxel Storage] Saving session test_session_xxx to project test-project
-[Blaxel Storage] Mock upload completed successfully
-Save Result: ✓ Success
+### Serve Locally with Blaxel CLI
+
+Test your MCP server locally with hot reload:
+
+```bash
+# Start local development server with hot reload
+bl serve --hotreload
 ```
 
-## Benefits
+This starts the server on `http://localhost:1338` and automatically reloads on code changes.
 
-### 1. **No Infrastructure Management**
+### Test with Inspector (Local)
 
-- No need to manage S3 buckets or cloud storage
-- Blaxel handles all infrastructure concerns
-- Focus on developing your MCP server
+Connect Inspector to your local server:
 
-### 2. **MCP-Optimized Storage**
+```bash
+# In another terminal
+npx @modelcontextprotocol/inspector http://localhost:1338/mcp --transport streamable-http
+```
 
-- Storage format optimized for MCP workloads
-- Fast retrieval and querying
-- Built-in data organization
+## Deployment Management
 
-### 3. **Easy Sharing**
+### View Deployments
 
-- Share captured sessions via URLs
-- Collaborative debugging and analysis
-- Team access to capture data
+List all deployments in your workspace:
 
-### 4. **Scalability**
+```bash
+bl list functions
+```
 
-- Automatically scales with your needs
-- No storage limits
-- Pay only for what you use
+### View Logs
+
+Monitor your deployed MCP server:
+
+```bash
+bl logs mcp-network-analyzer --follow
+```
+
+### Update Deployment
+
+Redeploy with changes:
+
+```bash
+# Make code changes
+pnpm run build
+
+# Deploy update
+bl deploy
+```
+
+### Traffic Management
+
+Control traffic routing between revisions:
+
+```bash
+# Deploy new revision with 0% traffic (canary)
+bl deploy --traffic 0
+
+# Gradually increase traffic
+bl deploy --traffic 50   # 50% to new revision
+bl deploy --traffic 100  # Full traffic to new revision
+```
+
+## Configuration Options
+
+### Environment Variables
+
+Add environment variables in `blaxel.toml`:
+
+```toml
+[env]
+MCP_STORAGE_MODE = "local"
+DEBUG = "false"
+```
+
+Or set them via CLI during deployment:
+
+```bash
+bl deploy --env DEBUG=true
+```
+
+### Runtime Configuration
+
+Adjust memory and timeout in `blaxel.toml`:
+
+```toml
+[runtime]
+memory = 512    # Memory in MB (default: 256)
+timeout = 60    # Timeout in seconds (default: 30)
+```
+
+### Public vs Private Endpoints
+
+To make your MCP server public (not recommended):
+
+```toml
+[triggers.configuration]
+  authenticationType = "public"
+```
+
+⚠️ **Warning**: Public endpoints bypass Blaxel authentication. You'll need to implement your own auth.
+
+## Monitoring & Observability
+
+### Built-in Tracing
+
+Blaxel automatically traces all requests:
+
+1. Visit [Blaxel Dashboard](https://console.blaxel.ai)
+2. Navigate to your workspace
+3. Select `Functions > mcp-network-analyzer`
+4. View traces, latency, and error rates
+
+### Health Checks
+
+The HTTP server includes a health check endpoint:
+
+```bash
+curl https://run.blaxel.ai/YOUR-WORKSPACE/functions/mcp-network-analyzer/health
+```
+
+Returns:
+
+```json
+{
+  "status": "ok",
+  "version": "0.1.0"
+}
+```
 
 ## Troubleshooting
 
-### Issue: "No API key configured"
+### Deployment Fails
 
-**Solution**: Set `BLAXEL_API_KEY` environment variable or run in mock mode for development.
+**Check logs:**
+```bash
+bl logs mcp-network-analyzer
+```
 
-### Issue: "Failed to upload to Blaxel"
+**Common issues:**
+- TypeScript compilation errors: Run `pnpm run type-check`
+- Missing dependencies: Ensure `pnpm install` succeeds
+- Invalid `blaxel.toml`: Validate TOML syntax
 
-**Solutions**:
+### Authentication Errors
 
-1. Check network connectivity
-2. Verify API key is valid
-3. Ensure project ID is correct
-4. Check Blaxel service status
+**User sees "Unauthorized":**
+- Verify user has valid Blaxel API key
+- Check API key hasn't expired
+- Ensure correct header: `X-Blaxel-Authorization: Bearer KEY`
 
-### Issue: "Custom endpoint not working"
+### Connection Timeouts
 
-**Solution**: Verify the `BLAXEL_ENDPOINT` URL is correct and accessible.
+**Increase timeout in `blaxel.toml`:**
+```toml
+[runtime]
+timeout = 120  # 2 minutes
+```
 
-## Support
+### Cold Start Issues
 
-For Blaxel-specific issues:
+Blaxel optimizes cold starts, but for large dependencies:
+- Keep dependencies minimal
+- Use lazy loading where possible
+- Consider pre-warming strategies
 
-- Visit [docs.blaxel.ai](https://docs.blaxel.ai)
-- Contact Blaxel support
-- Check Blaxel service status
+## Cost & Limits
 
-For integration issues:
+### Pricing Model
 
-- Open an issue in this repository
-- Check implementation in `src/lib/blaxel-storage-adapter.ts`
-- Review test output from `test/test-dual-mode.js`
+Blaxel charges based on:
+- **Compute time**: Duration of request processing
+- **Memory**: Memory allocated to function
+- **Network**: Data transfer (egress)
 
-## Next Steps
+Free tier available for development and testing.
 
-1. **Sign up for Blaxel** at [blaxel.ai](https://blaxel.ai)
-2. **Get your credentials** from the Blaxel dashboard
-3. **Configure your environment** with Blaxel credentials
-4. **Test the integration** with a simple capture
-5. **Deploy to production** with confidence
+### Resource Limits
 
-## Migration
+Default limits (can be increased):
+- Memory: 256MB - 2GB
+- Timeout: 30s - 300s
+- Concurrent requests: Auto-scaled
+
+## Security Best Practices
+
+1. **Never commit API keys**: Use environment variables
+2. **Use private auth**: Keep default `authenticationType = "private"`
+3. **Rotate keys regularly**: Update user API keys periodically
+4. **Monitor access**: Review logs for unusual activity
+5. **Limit workspace access**: Only grant access to trusted users
+
+## Migration from Local/Cloud
 
 ### From Local Storage
 
-To migrate from local to Blaxel storage:
+No migration needed! Data capture works the same way:
+- Captured sessions stored locally on the serverless instance
+- Each session is ephemeral (exists during function execution)
+- For persistent storage, integrate cloud storage separately
 
-1. Export your existing local data
-2. Configure Blaxel mode
-3. Re-run captures (data will go to Blaxel)
-4. Optionally upload historical data via Blaxel API
+### From Cloud Storage (S3/GCS)
 
-## Best Practices
+Update environment variables in `blaxel.toml`:
 
-1. **Use environment-specific projects**: Separate dev/staging/prod projects
-2. **Rotate API keys regularly**: Update keys periodically for security
-3. **Monitor usage**: Keep track of storage usage in Blaxel dashboard
-4. **Test in mock mode first**: Validate integration before production
-5. **Set up alerts**: Configure alerts for upload failures or API errors
+```toml
+[env]
+MCP_STORAGE_MODE = "cloud"
+MCP_CLOUD_PROVIDER = "aws-s3"
+MCP_CLOUD_BUCKET = "your-bucket"
+```
+
+Add cloud credentials as Blaxel secrets (not in `blaxel.toml`).
+
+## Support & Resources
+
+### Documentation
+
+- **Blaxel Docs**: [docs.blaxel.ai](https://docs.blaxel.ai)
+- **MCP Specification**: [modelcontextprotocol.io](https://modelcontextprotocol.io)
+- **Project README**: [README.md](../README.md)
+
+### Community
+
+- Blaxel Discord: Join for support and discussions
+- GitHub Issues: Report bugs or request features
+
+### Getting Help
+
+For deployment issues:
+1. Check Blaxel docs: [docs.blaxel.ai/Functions](https://docs.blaxel.ai/Functions)
+2. Review logs: `bl logs mcp-network-analyzer`
+3. Test locally first: `bl serve --hotreload`
+4. Contact Blaxel support
+
+## Next Steps
+
+1. ✅ **Deploy**: Run `bl deploy` to deploy your first version
+2. ✅ **Test**: Use MCP Inspector to verify functionality
+3. ✅ **Share**: Give users your endpoint URL
+4. ✅ **Monitor**: Watch logs and traces in Blaxel dashboard
+5. ✅ **Iterate**: Make changes and redeploy with `bl deploy`
+
+## Example: Complete Deployment Flow
+
+```bash
+# 1. Install dependencies
+pnpm install
+
+# 2. Build locally
+pnpm run build
+
+# 3. Test locally
+PORT=3001 node dist/index-http.js
+
+# 4. Test with Inspector (in another terminal)
+npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport streamable-http
+
+# 5. Deploy to Blaxel
+bl deploy
+
+# 6. Test deployed version
+npx @modelcontextprotocol/inspector \
+  https://run.blaxel.ai/YOUR-WORKSPACE/functions/mcp-network-analyzer/mcp \
+  --transport streamable-http \
+  -H "X-Blaxel-Authorization: Bearer YOUR_API_KEY"
+
+# 7. Monitor logs
+bl logs mcp-network-analyzer --follow
+```
 
 ## Conclusion
 
-Blaxel integration provides a seamless, MCP-optimized cloud storage solution for the Network Analyzer. Whether you're developing locally or deploying to production, Blaxel makes it easy to store, share, and manage captured network data.
+Blaxel provides a seamless, serverless hosting solution for your MCP Network Analyzer. With private workspace-based authentication, users can securely access your deployed MCP server without you sharing credentials. Deploy once with `bl deploy`, and your MCP server is globally available with automatic scaling, monitoring, and zero infrastructure management.
+
+**Ready to deploy?** Run `bl deploy` and your MCP server will be live in minutes! 🚀

@@ -1,0 +1,26 @@
+# Blaxel MCP Server Deployment Configuration
+# Documentation: https://docs.blaxel.ai/Functions/Deploy-a-function
+
+name = "mcp-network-analyzer"
+type = "function"
+
+# Environment variables (non-secrets)
+# Note: These are NOT secrets - use Blaxel secrets management for sensitive data
+[env]
+# Storage mode will default to local for now
+# Users can configure cloud storage via Blaxel secrets if needed
+MCP_STORAGE_MODE = "local"
+
+# HTTP trigger configuration
+[[triggers]]
+  id = "trigger-mcp-network-analyzer"
+  type = "http"
+
+[triggers.configuration]
+  # Endpoint path: https://run.blaxel.ai/{YOUR-WORKSPACE}/functions/mcp-network-analyzer/mcp
+  path = "functions/mcp-network-analyzer"
+  
+  # Private authentication (default)
+  # Users authenticate with their own Blaxel workspace API keys
+  # No need to share your credentials - each user brings their own
+  authenticationType = "private"
