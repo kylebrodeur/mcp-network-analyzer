@@ -5,9 +5,9 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { CaptureSession, StorageResult } from './types.js';
-import { BaseStorageAdapter } from './storage-adapter.js';
 import { Config } from './config.js';
+import { BaseStorageAdapter } from './storage-adapter.js';
+import type { CaptureSession, StorageResult } from './types.js';
 
 // Get the project root directory
 const __filename = fileURLToPath(import.meta.url);
@@ -36,15 +36,23 @@ export class LocalStorageAdapter extends BaseStorageAdapter {
     // First priority: config or environment variable
     const configuredDir = config.getLocalDataDir();
     if (configuredDir) {
+      console.error(`[LocalStorageAdapter] Using configured data directory: ${configuredDir}`);
       return configuredDir;
     }
 
     // Second priority: If running as installed package, use cwd()/mcp-network-data
-    if (process.cwd() !== PROJECT_ROOT) {
-      return join(process.cwd(), 'mcp-network-data');
+    const cwd = process.cwd();
+    console.error(`[LocalStorageAdapter] process.cwd(): ${cwd}`);
+    console.error(`[LocalStorageAdapter] PROJECT_ROOT: ${PROJECT_ROOT}`);
+    
+    if (cwd !== PROJECT_ROOT) {
+      const dataPath = join(cwd, 'mcp-network-data');
+      console.error(`[LocalStorageAdapter] Using cwd-based data directory: ${dataPath}`);
+      return dataPath;
     }
 
     // Default: Use package data directory (for development)
+    console.error(`[LocalStorageAdapter] Using project data directory: ${join(PROJECT_ROOT, 'data')}`);
     return join(PROJECT_ROOT, 'data');
   }
 
@@ -52,6 +60,8 @@ export class LocalStorageAdapter extends BaseStorageAdapter {
    * Initialize local storage directories
    */
   async initialize(): Promise<void> {
+    // Ensure base data directory exists first
+    await mkdir(this.dataDir, { recursive: true });
     await mkdir(this.capturesDir, { recursive: true });
     await mkdir(join(this.dataDir, 'analyses'), { recursive: true });
     await mkdir(join(this.dataDir, 'generated'), { recursive: true });

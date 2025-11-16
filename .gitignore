@@ -15,7 +15,10 @@ exported-data/
 *.sqlite
 *.db
 
-# Test data (but keep .gitkeep files)
-data/captures/test_*
-data/analyses/test_*
-data/generated/test_*
+# All captured/analyzed data (keep only .gitkeep)
+data/captures/*
+!data/captures/.gitkeep
+data/analyses/*
+!data/analyses/.gitkeep
+data/generated/*
+!data/generated/.gitkeep
