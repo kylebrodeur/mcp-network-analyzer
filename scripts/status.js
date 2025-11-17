@@ -5,14 +5,15 @@
  * Shows current configuration, storage status, and tool availability
  */
 
-import { readFile, stat, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join, dirname } from 'path';
+import { readdir, readFile, stat } from 'fs/promises';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PROJECT_ROOT = join(__dirname, '..');
+const PROFILES_PATH = join(PROJECT_ROOT, '.env.profiles.json');
 
 function log(message, emoji = '') {
   console.log(emoji ? `${emoji} ${message}` : message);
@@ -40,6 +41,18 @@ async function loadEnv() {
   });
   
   return env;
+}
+
+async function loadProfiles() {
+  try {
+    if (existsSync(PROFILES_PATH)) {
+      const data = await readFile(PROFILES_PATH, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    // Ignore errors
+  }
+  return { profiles: {}, active: null };
 }
 
 async function checkHFToken(token) {
@@ -154,51 +167,93 @@ function formatBytes(bytes) {
 async function main() {
   console.log('\n🔍 MCP Network Analyzer - Status Check\n');
   
-  // Load environment
+  // Load environment and profiles
   const env = await loadEnv();
+  const profileData = await loadProfiles();
   const mode = env.MCP_STORAGE_MODE || process.env.MCP_STORAGE_MODE || 'local';
+  
+  // Show active profile if exists
+  if (profileData.active) {
+    section('🔖 Active Profile');
+    const profile = profileData.profiles[profileData.active];
+    log(`Name:        ${profileData.active}`, '');
+    if (profile.description) {
+      log(`Description: ${profile.description}`, '');
+    }
+    
+    // Show transport type
+    const transportType = profile.transport === 'remote' ? '🌐 Remote Server' : '📍 Local Server';
+    log(`Transport:   ${transportType}`, '');
+    
+    // Show remote URL if applicable
+    if (profile.transport === 'remote' && profile.env?.MCP_SERVER_URL) {
+      log(`Server URL:  ${profile.env.MCP_SERVER_URL}`, '');
+    }
+    
+    log(`Mode:        ${profile.mode}`, '');
+    log(`Created:     ${new Date(profile.createdAt).toLocaleString()}`, '');
+    
+    // Show other profiles
+    const otherProfiles = Object.keys(profileData.profiles).filter(p => p !== profileData.active);
+    if (otherProfiles.length > 0) {
+      log(`\nOther saved: ${otherProfiles.join(', ')}`, '💡');
+      log(`Switch with: pnpm run setup -- --switch <name>`, '');
+    }
+  }
   
   // Storage configuration
   section('📦 Storage Configuration');
   
-  switch (mode) {
-    case 'local':
-      log('Mode:        💾 Local (file system)', '');
-      log(`Directory:   ${env.MCP_NETWORK_ANALYZER_DATA || './data'}`, '');
-      break;
-      
-    case 'cloud':
-      log('Mode:        ☁️  Cloud Storage', '');
-      log(`Provider:    ${env.MCP_CLOUD_PROVIDER || 'Unknown'}`, '');
-      log(`Bucket:      ${env.MCP_CLOUD_BUCKET || 'Not set'}`, '');
-      log(`Region:      ${env.MCP_CLOUD_REGION || 'Not set'}`, '');
-      break;
-      
-    case 'hf-dataset':
-      log('Mode:        🤗 HuggingFace Dataset', '');
-      log(`Repository:  ${env.HF_DATASET_REPO || 'Not set'}`, '');
-      log(`Privacy:     ${env.HF_DATASET_PRIVATE === 'true' ? 'Private' : 'Public'}`, '');
-      
-      if (env.HF_TOKEN) {
-        const tokenCheck = await checkHFToken(env.HF_TOKEN);
-        if (tokenCheck.valid) {
-          log(`Token:       ✓ Valid (user: ${tokenCheck.username})`, '');
+  // Check if remote mode
+  if (mode === 'remote' || env.MCP_SERVER_URL) {
+    log('Type:        🌐 Remote MCP Server', '');
+    log(`Server URL:  ${env.MCP_SERVER_URL || 'Not set'}`, '');
+    if (env.MCP_AUTH_HEADERS) {
+      log('Auth:        ✓ Configured', '');
+    }
+    console.log('\n💡 Storage is managed by the remote server.');
+    console.log('   Contact server admin for storage details.\n');
+  } else {
+    // Local server with storage config
+    switch (mode) {
+      case 'local':
+        log('Mode:        💾 Local (file system)', '');
+        log(`Directory:   ${env.MCP_NETWORK_ANALYZER_DATA || './data'}`, '');
+        break;
+        
+      case 'cloud':
+        log('Mode:        ☁️  Cloud Storage', '');
+        log(`Provider:    ${env.MCP_CLOUD_PROVIDER || 'Unknown'}`, '');
+        log(`Bucket:      ${env.MCP_CLOUD_BUCKET || 'Not set'}`, '');
+        log(`Region:      ${env.MCP_CLOUD_REGION || 'Not set'}`, '');
+        break;
+        
+      case 'hf-dataset':
+        log('Mode:        🤗 HuggingFace Dataset', '');
+        log(`Repository:  ${env.HF_DATASET_REPO || 'Not set'}`, '');
+        log(`Privacy:     ${env.HF_DATASET_PRIVATE === 'true' ? 'Private' : 'Public'}`, '');
+        
+        if (env.HF_TOKEN) {
+          const tokenCheck = await checkHFToken(env.HF_TOKEN);
+          if (tokenCheck.valid) {
+            log(`Token:       ✓ Valid (user: ${tokenCheck.username})`, '');
+          } else {
+            log('Token:       ❌ Invalid or expired', '');
+          }
         } else {
-          log('Token:       ❌ Invalid or expired', '');
+          log('Token:       ❌ Not configured', '');
         }
-      } else {
-        log('Token:       ❌ Not configured', '');
-      }
-      break;
-      
-    case 'blaxel':
-      log('Mode:        🚀 Blaxel (MCP hosting)', '');
-      log(`Project:     ${env.BLAXEL_PROJECT_ID || 'Not set'}`, '');
-      log(`Endpoint:    ${env.BLAXEL_ENDPOINT || 'Default'}`, '');
-      break;
-      
-    default:
-      log(`Mode:        Unknown (${mode})`, '❌');
+        break;
+        
+      case 'blaxel':
+        log('Mode:        🚀 Blaxel (MCP hosting)', '');
+        log(`Project:     ${env.BLAXEL_PROJECT_ID || 'Not set'}`, '');
+        log(`Endpoint:    ${env.BLAXEL_ENDPOINT || 'Default'}`, '');
+        break;
+        
+      default:
+        log(`Mode:        Unknown (${mode})`, '❌');
+    }
   }
   
   // Data statistics

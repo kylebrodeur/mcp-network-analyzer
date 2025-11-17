@@ -62,6 +62,72 @@ pnpm run status
 
 This shows your configuration, data statistics, and tool availability.
 
+### Switching Between Profiles
+
+Once you've saved multiple configurations (e.g., "local" and "cloud"), you can easily switch between them:
+
+```bash
+# Switch to a specific profile
+pnpm run setup -- --switch local
+pnpm run setup -- --switch cloud
+
+# Interactive profile switcher
+pnpm run setup -- --switch
+
+# List all saved profiles
+pnpm run setup -- --list
+```
+
+Profiles are saved in `.env.profiles.json` and switching is instant - no need to re-enter credentials!
+
+## Server Modes
+
+MCP Network Analyzer supports both local and remote server configurations:
+
+### Local Server (Default)
+
+Run the MCP server on your local machine. Best for development and when you need full control.
+
+```bash
+pnpm run setup  # Choose "Local" when prompted
+```
+
+The server runs locally and connects directly to Claude Desktop via stdio or HTTP transport.
+
+### Remote Server
+
+Connect to a hosted MCP server (e.g., on Blaxel, AWS, or your own infrastructure). Best for:
+- Team collaboration (shared captures)
+- Production deployments
+- Cloud-native setups
+
+```bash
+pnpm run setup  # Choose "Remote" when prompted
+```
+
+**Setup prompts:**
+1. Remote server URL (e.g., `https://run.blaxel.ai/username/functions/mcp-network-analyzer/mcp`)
+2. Authentication method (Bearer Token, API Key, or Basic Auth)
+
+**Example remote config:**
+```json
+{
+  "mcpServers": {
+    "network-analyzer": {
+      "transport": {
+        "type": "http",
+        "url": "https://your-server.com/mcp",
+        "headers": {
+          "Authorization": "Bearer your-token"
+        }
+      }
+    }
+  }
+}
+```
+
+You can save both local and remote profiles and switch between them easily!
+
 ## Installation
 
 ```bash

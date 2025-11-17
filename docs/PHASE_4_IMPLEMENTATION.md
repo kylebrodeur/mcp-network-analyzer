@@ -16,12 +16,14 @@ Phase 4 implements intelligent code generation using Claude API to automatically
 ### 1. Code Generator Library (`src/lib/code-generator.ts`)
 
 **Features:**
+
 - **Claude API Integration** - Uses Claude 3.5 Sonnet for intelligent code generation
 - **Multi-language Support** - TypeScript, Python, JavaScript, Go
 - **Template System** - Handlebars fallback for simple cases
 - **Smart Prompting** - Generates detailed prompts based on API patterns
 
 **Key Components:**
+
 - `CodeGenerator` class - Main AI-powered generator
 - `TemplateCodeGenerator` class - Template-based fallback
 - Handlebars helpers for code formatting
@@ -30,6 +32,7 @@ Phase 4 implements intelligent code generation using Claude API to automatically
 ### 2. Generate Export Tool (`src/tools/generate.ts`)
 
 **Functionality:**
+
 - Loads discovered API patterns from analysis results
 - Determines authentication requirements
 - Detects pagination and rate limiting needs
@@ -38,6 +41,7 @@ Phase 4 implements intelligent code generation using Claude API to automatically
 - Provides usage instructions
 
 **Input:**
+
 ```typescript
 {
   analysisId: string;           // ID from discover_api_patterns
@@ -51,6 +55,7 @@ Phase 4 implements intelligent code generation using Claude API to automatically
 ```
 
 **Output:**
+
 ```typescript
 {
   success: boolean;
@@ -66,6 +71,7 @@ Phase 4 implements intelligent code generation using Claude API to automatically
 ### 3. Handlebars Template (`src/templates/export-typescript.hbs`)
 
 **Features:**
+
 - Base template for TypeScript export scripts
 - Supports authentication injection
 - Handles pagination automatically
@@ -74,6 +80,7 @@ Phase 4 implements intelligent code generation using Claude API to automatically
 - Configurable via command-line arguments
 
 **Template Variables:**
+
 - `toolName` - Name of the export tool
 - `patterns` - Array of API patterns to export
 - `targetUrl` - Base URL for API
@@ -85,10 +92,12 @@ Phase 4 implements intelligent code generation using Claude API to automatically
 ### 4. MCP Tool Integration
 
 **Updated Files:**
+
 - `src/index.ts` - Stdio transport with generate_export_tool
 - `src/index-http.ts` - HTTP transport with generate_export_tool
 
 **Tool Schema:**
+
 ```typescript
 {
   analysisId: string;
@@ -169,6 +178,7 @@ All generated export scripts include:
 ```
 
 **Result:**
+
 ```
 ✅ Export Tool Generated Successfully
 
@@ -185,10 +195,12 @@ Usage Instructions:
 tsx exportModelContextProtocolData.ts --output data.json
 ```
 
-## Features:
+## Features
+
 - Output format: JSON
 - Error handling: Automatic retries on failure
 - Logging: Progress tracking to console
+
 ```
 
 ### Example 2: Generate Python Export Tool with Auth
@@ -207,6 +219,7 @@ tsx exportModelContextProtocolData.ts --output data.json
 ```
 
 **Generated script will include:**
+
 ```python
 import requests
 import json
@@ -465,6 +478,7 @@ search_exported_data (Phase 5)
 ### Issue: "Anthropic API key required"
 
 **Solution:**
+
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
 # Or add to ~/.zshrc for persistence
@@ -473,6 +487,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 ### Issue: Generated code has syntax errors
 
 **Solution:**
+
 - Review the discovery patterns - ensure they're valid
 - Check the generated code manually
 - Report issues to improve Claude prompts
@@ -480,6 +495,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 ### Issue: Generated script doesn't work
 
 **Solution:**
+
 - Review authentication requirements
 - Check rate limiting settings
 - Verify target URL is correct
@@ -488,6 +504,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 ### Issue: TypeScript compilation errors
 
 **Solution:**
+
 ```bash
 pnpm run type-check
 pnpm run build

@@ -18,6 +18,9 @@
 - **Blaxel production deployment with private workspace auth**
 - **Live at**: `https://run.blaxel.ai/kylebrodeur/functions/mcp-network-analyzer/mcp`
 - Tested with MCP Inspector on deployed Blaxel endpoint
+- **Interactive setup wizard with profile management**
+- **Remote MCP server configuration support**
+- **Easy switching between local and remote setups**
 - Comprehensive documentation and testing
 
 🚧 **Next Up - Hackathon Focus:**
@@ -110,6 +113,20 @@
 - Singleton pattern for consistency
 - Runtime mode switching support
 
+**Setup & UX Tools** ✅ NEW
+
+- `scripts/setup.js` - Interactive setup wizard
+  - Storage mode selection (Local, Cloud, HF Dataset, Blaxel)
+  - Remote server configuration
+  - Profile management (save multiple configs)
+  - HuggingFace token validation
+  - Private dataset creation
+  - Authentication setup (Bearer, API Key, Basic)
+- `scripts/install-claude.sh` - One-click Claude Desktop installer
+- `scripts/status.js` - Status checker with validation
+- Profile switching: `pnpm run setup -- --switch <profile>`
+- Profiles stored in `.env.profiles.json` (gitignored)
+
 ### 4. Capture Tool ✅
 
 **`capture_network_requests`** (`src/tools/capture.ts`)
@@ -158,6 +175,7 @@ Fully functional network capture with:
 - `docs/PLAN.md` - Full implementation plan
 - `docs/DUAL_MODE_ARCHITECTURE.md` - Storage architecture
 - `docs/BLAXEL_INTEGRATION.md` - Blaxel integration guide
+- `docs/REMOTE_SETUP.md` - Remote server configuration guide ✅ NEW
 - `.github/copilot-instructions.md` - Codegen guidelines
 
 ---
@@ -424,6 +442,27 @@ Search and query captured data:
 
 ## Environment Configuration
 
+### Setup Wizard (Recommended) ✅ NEW
+
+```bash
+# Interactive setup for any mode
+pnpm run setup
+
+# Choose from:
+# 1. Local server + storage mode (local, cloud, HF dataset, Blaxel)
+# 2. Remote server + authentication
+
+# Check current configuration
+pnpm run status
+
+# Switch between saved profiles
+pnpm run setup -- --switch local
+pnpm run setup -- --switch remote-blaxel
+pnpm run setup -- --list
+```
+
+### Manual Configuration
+
 ### Local Mode (Default)
 
 ```bash
@@ -456,6 +495,33 @@ BLAXEL_PROJECT_ID=your-project-id \
 BLAXEL_API_KEY=your-api-key \
 node dist/index.js
 ```
+
+### Remote Server Mode ✅ NEW
+
+Connect to a hosted MCP server instead of running locally:
+
+```json
+{
+  "mcpServers": {
+    "network-analyzer": {
+      "transport": {
+        "type": "http",
+        "url": "https://run.blaxel.ai/username/functions/mcp-network-analyzer/mcp",
+        "headers": {
+          "Authorization": "Bearer your-token"
+        }
+      }
+    }
+  }
+}
+```
+
+**Use cases:**
+- Team collaboration (shared captures)
+- Production deployments
+- Cloud-native setups
+
+**Setup:** `pnpm run setup` → Choose "Remote" → Enter URL → Configure auth
 
 ---
 
@@ -509,6 +575,12 @@ Search and query captured data.
 ```bash
 # Install dependencies
 pnpm install
+
+# Interactive setup (recommended)
+pnpm run setup
+
+# Check status
+pnpm run status
 
 # Development mode (watch + rebuild)
 pnpm run dev          # stdio mode
@@ -614,7 +686,7 @@ npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport stream
 
 ---
 
-## Resources
+### Resources
 
 ### Documentation
 
@@ -622,6 +694,7 @@ npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport stream
 - **Implementation Plan:** `/docs/PLAN.md`
 - **Storage Architecture:** `/docs/DUAL_MODE_ARCHITECTURE.md`
 - **Blaxel Integration:** `/docs/BLAXEL_INTEGRATION.md`
+- **Remote Setup Guide:** `/docs/REMOTE_SETUP.md` ✅ NEW
 - **This File:** `/docs/PROJECT_STATUS.md`
 
 ### Code

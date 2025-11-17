@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.log
 .env
+.env.profiles.json
 .DS_Store
 
 # Browser data
