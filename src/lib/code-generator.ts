@@ -3,10 +3,9 @@
  * Generates export scripts in multiple languages from discovered API patterns
  */
 
-import { OpenAI } from "openai";
 import Handlebars from "handlebars";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { OpenAI } from "openai";
 import type { APIPattern } from "./pattern-matcher.js";
 
 export interface CodeGenerationOptions {

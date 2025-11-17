@@ -6,8 +6,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CodeGenerator, type CodeGenerationOptions } from "../lib/code-generator.js";
-import { Storage } from "../lib/storage.js";
 import type { APIPattern } from "../lib/pattern-matcher.js";
+import { Storage } from "../lib/storage.js";
 
 export interface GenerateOptions {
   analysisId: string;
