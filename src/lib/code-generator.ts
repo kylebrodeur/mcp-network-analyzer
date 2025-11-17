@@ -6,7 +6,7 @@
 import { HfInference } from "@huggingface/inference";
 import Handlebars from "handlebars";
 import { readFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { APIPattern } from "./pattern-matcher.js";
 
