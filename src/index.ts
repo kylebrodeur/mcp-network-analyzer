@@ -72,13 +72,13 @@ const discoverApiPatternsSchema = z.object({
 const generateExportToolSchema = z.object({
   analysisId: z.string().min(1),
   toolName: z.string().min(1),
+  nebiusApiKey: z.string().min(1).describe('Your Nebius Token Factory API key - get one at https://tokenfactory.nebius.com/project/api-keys'),
+  model: z.string().min(1).default('deepseek-ai/DeepSeek-R1-0528').describe('Model to use: deepseek-ai/DeepSeek-R1-0528, meta-llama/Llama-3.3-70B-Instruct, Qwen/QwQ-32B-Preview'),
   targetUrl: z.string().url().optional(),
   outputDirectory: z.string().optional(),
   outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),
   incremental: z.boolean().optional(),
-  language: z.enum(['typescript', 'python', 'javascript', 'go']).default('typescript').optional(),
-  nebiusApiKey: z.string().optional(),
-  model: z.string().optional()
+  language: z.enum(['typescript', 'python', 'javascript', 'go']).default('typescript').optional()
 });
 
 const searchExportedDataSchema = z.object({
@@ -415,18 +415,18 @@ const registerPlaceholderTools = () => {
         'Renders a Handlebars template to build a reusable export script that replays discovered API calls.',
       inputSchema: generateExportToolSchema.shape
     },
-    async ({ analysisId, toolName, targetUrl, outputDirectory, outputFormat, incremental, language, nebiusApiKey, model }) => {
+    async ({ analysisId, toolName, nebiusApiKey, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
       try {
         const result = await generateExportTool({
           analysisId,
           toolName,
+          nebiusApiKey,
+          model,
           targetUrl,
           outputDirectory,
           outputFormat,
           incremental,
-          language,
-          nebiusApiKey,
-          model
+          language
         });
 
         if (!result.success) {
