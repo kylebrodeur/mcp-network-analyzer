@@ -6,7 +6,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 
+import { analyzeCapturedData } from './tools/analyze.js';
 import { captureNetworkRequests } from './tools/capture.js';
+import { discoverApiPatterns } from './tools/discover.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
@@ -233,7 +235,7 @@ async function registerTools(server: McpServer) {
     }
   );
 
-  // Register other tools with placeholder implementations
+  // Register analyze_captured_data tool
   server.registerTool(
     'analyze_captured_data',
     {
@@ -242,15 +244,102 @@ async function registerTools(server: McpServer) {
         'Parses captured JSON files to extract request groups, authentication hints, and response metadata.',
       inputSchema: analyzeCapturedDataSchema.shape
     },
-    async () => ({
-      content: [
-        {
-          type: 'text' as const,
-          text: 'The analyze_captured_data tool is not implemented yet in HTTP mode. Use stdio mode or follow the roadmap in docs/PLAN.md.'
+    async ({ captureId, includeStaticAssets, outputPath }) => {
+      try {
+        const result = await analyzeCapturedData({
+          captureId,
+          includeStaticAssets,
+          outputPath
+        });
+
+        if (!result.success) {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: `Failed to analyze captured data: ${result.error}`
+              }
+            ],
+            isError: true
+          };
         }
-      ],
-      isError: true
-    })
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# Network Analysis Complete',
+                '',
+                `**Analysis ID:** ${result.analysisId}`,
+                `**Capture ID:** ${captureId}`,
+                '',
+                '## 📊 Summary',
+                `- Total Requests: ${result.summary.totalRequests}`,
+                `- Total Responses: ${result.summary.totalResponses}`,
+                `- API Endpoints: ${result.summary.apiEndpoints}`,
+                `- Static Assets: ${result.summary.staticAssets}`,
+                `- Errors (4xx/5xx): ${result.summary.errorCount}`,
+                '',
+                '## 🌐 Domains',
+                ...result.summary.domains.map(domain => `- ${domain}`),
+                '',
+                '## 🔌 Endpoint Groups',
+                result.endpointGroups.length > 0
+                  ? result.endpointGroups
+                      .slice(0, 10)
+                      .map(
+                        group =>
+                          `- ${group.method} ${group.pathPattern} (${group.count} calls)\\n  Example: ${group.exampleUrl}`
+                      )
+                      .join('\\n')
+                  : '- No API endpoints detected',
+                result.endpointGroups.length > 10
+                  ? `\\n... and ${result.endpointGroups.length - 10} more groups`
+                  : '',
+                '',
+                '## 🔐 Authentication',
+                `- Method: ${result.authentication.method}`,
+                `- Confidence: ${Math.round(result.authentication.confidence * 100)}%`,
+                result.authentication.headers.length > 0
+                  ? `- Auth Headers: ${result.authentication.headers.join(', ')}`
+                  : '',
+                `- Has Cookies: ${result.authentication.hasCookies ? 'Yes' : 'No'}`,
+                '',
+                '## 📦 Content Types',
+                ...Object.entries(result.contentTypes)
+                  .sort(([, a], [, b]) => (b as number) - (a as number))
+                  .slice(0, 5)
+                  .map(([type, count]) => `- ${type}: ${count}`),
+                '',
+                '## 📈 Status Codes',
+                ...Object.entries(result.statusCodes)
+                  .sort(([, a], [, b]) => (b as number) - (a as number))
+                  .map(([code, count]) => `- ${code}: ${count}`),
+                '',
+                '## 💡 Recommendations',
+                ...result.recommendations.map((rec, i) => `${i + 1}. ${rec}`),
+                '',
+                '## 📁 Analysis Saved',
+                `Path: ${result.analysisPath}`
+              ]
+                .filter(line => line !== '')
+                .join('\\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Error analyzing captured data: ${error instanceof Error ? error.message : String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
   );
 
   server.registerTool(
@@ -261,15 +350,106 @@ async function registerTools(server: McpServer) {
         'Performs deeper analysis against previous analyze results to infer REST patterns, pagination, and data models.',
       inputSchema: discoverApiPatternsSchema.shape
     },
-    async () => ({
-      content: [
-        {
-          type: 'text' as const,
-          text: 'The discover_api_patterns tool is not implemented yet in HTTP mode. Use stdio mode or follow the roadmap in docs/PLAN.md.'
+    async ({ analysisId, minConfidence, includeAuthInsights }) => {
+      try {
+        const result = await discoverApiPatterns({
+          analysisId,
+          minConfidence,
+          includeAuthInsights
+        });
+
+        if (!result.success) {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: `Failed to discover API patterns: ${result.error}`
+              }
+            ],
+            isError: true
+          };
         }
-      ],
-      isError: true
-    })
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# API Pattern Discovery Complete',
+                '',
+                `**Discovery ID:** ${result.discoveryId}`,
+                `**Analysis ID:** ${analysisId}`,
+                `**Patterns Found:** ${result.patterns.length}`,
+                '',
+                '## 🎯 Discovered Patterns',
+                result.patterns.length > 0
+                  ? result.patterns.map(
+                      pattern =>
+                        [
+                          `### ${pattern.method} ${pattern.pathPattern}`,
+                          `- Type: ${pattern.type}`,
+                          `- Confidence: ${pattern.confidence * 100}%`,
+                          `- Auth Required: ${pattern.authRequired ? 'Yes' : 'No'}`,
+                          `- Response Type: ${pattern.responseType}`,
+                          pattern.dataModel
+                            ? `- Data Model: ${pattern.dataModel.name} (${pattern.dataModel.propertyCount} properties${pattern.dataModel.hasNestedObjects ? ', with nested objects' : ''})`
+                            : '',
+                          `- Example: ${pattern.exampleUrl}`,
+                          ''
+                        ]
+                          .filter(line => line !== '')
+                          .join('\\n')
+                    )
+                  : ['- No patterns discovered (confidence threshold not met)'],
+                '',
+                '## 📄 Pagination',
+                `- Type: ${result.pagination.type}`,
+                `- Detected: ${result.pagination.detected ? 'Yes' : 'No'}`,
+                result.pagination.detected
+                  ? `- Confidence: ${Math.round(result.pagination.confidence * 100)}%`
+                  : '',
+                result.pagination.params && Object.keys(result.pagination.params).length > 0
+                  ? `- Parameters: ${JSON.stringify(result.pagination.params)}`
+                  : '',
+                '',
+                '## ⚡ Rate Limiting',
+                `- Detected: ${result.rateLimiting.detected ? 'Yes' : 'No'}`,
+                result.rateLimiting.headers
+                  ? `- Headers: ${result.rateLimiting.headers.join(', ')}`
+                  : '',
+                '',
+                result.relationships.length > 0
+                  ? [
+                      '## 🔗 Endpoint Relationships',
+                      ...result.relationships.map(
+                        rel => `- ${rel.from} → ${rel.to} (${rel.type})`
+                      ),
+                      ''
+                    ].join('\\n')
+                  : '',
+                '## 💡 Recommendations',
+                ...result.recommendations.map((rec, i) => `${i + 1}. ${rec}`),
+                '',
+                '## 📁 Discovery Saved',
+                `Path: ${result.discoveryPath}`
+              ]
+                .filter(line => line !== '')
+                .join('\\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Error discovering API patterns: ${error instanceof Error ? error.message : String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
   );
 }
 

@@ -275,4 +275,47 @@ export class NetworkAnalyzer {
       })
       .join("/");
   }
+
+  /**
+   * Generate suggested next steps based on analysis
+   */
+  generateSuggestions(summary: AnalysisSummary): string[] {
+    const suggestions: string[] = [];
+
+    // Suggest based on endpoint patterns
+    const restEndpoints = summary.endpointGroups.filter(g => 
+      g.pathPattern.includes(':id') || g.pathPattern.includes(':uuid')
+    );
+    
+    if (restEndpoints.length > 0) {
+      suggestions.push(
+        `Discovered ${restEndpoints.length} REST-like endpoints - run discover_api_patterns for detailed analysis`
+      );
+    }
+
+    // Suggest based on authentication
+    if (summary.authInfo.method !== 'none') {
+      suggestions.push(
+        `Authentication detected (${summary.authInfo.method}) - export script will include auth handling`
+      );
+    } else {
+      suggestions.push('No authentication detected - API may be public or require setup');
+    }
+
+    // Suggest based on endpoint count
+    if (summary.endpointGroups.length > 10) {
+      suggestions.push('Large API surface detected - consider focusing on specific endpoints');
+    } else if (summary.endpointGroups.length > 0) {
+      suggestions.push('Ready for code generation - run generate_export_tool to create export script');
+    }
+
+    // Suggest based on errors
+    if (summary.summary.errorCount > 0) {
+      suggestions.push(
+        `${summary.summary.errorCount} errors detected - review authentication or endpoint access`
+      );
+    }
+
+    return suggestions;
+  }
 }
