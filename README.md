@@ -316,13 +316,14 @@ Generate a complete, runnable export script for the discovered API using Claude 
 
 - `analysisId` (string, required): ID from discover_api_patterns
 - `toolName` (string, required): Name for the generated tool
+- `nebiusApiKey` (string, required): Your Nebius Token Factory API key
+  - Get your key at: <https://tokenfactory.nebius.com/project/api-keys>
+- `model` (string, required): Nebius model to use (default: deepseek-ai/DeepSeek-R1-0528)
+  - Available models: `deepseek-ai/DeepSeek-R1-0528`, `meta-llama/Llama-3.3-70B-Instruct`, `Qwen/QwQ-32B-Preview`
 - `targetUrl` (string, optional): Override target URL (auto-detected if not provided)
 - `outputDirectory` (string, optional): Custom output directory (default: data/generated)
 - `outputFormat` (string, optional): Output format (json, csv, sqlite - default: json)
 - `language` (string, optional): Programming language (typescript, python, javascript, go - default: typescript)
-- `nebiusApiKey` (string, optional): Nebius Token Factory API key (if not set via environment variable)
-- `model` (string, optional): Nebius model to use (default: deepseek-ai/DeepSeek-R1-0528)
-  - Available models: deepseek-ai/DeepSeek-R1-0528, meta-llama/Llama-3.3-70B-Instruct, Qwen/QwQ-32B-Preview, etc.
 - `incremental` (boolean, optional): Support incremental exports (planned feature)
 
 **Returns:**
@@ -346,12 +347,9 @@ Generate a complete, runnable export script for the discovered API using Claude 
 
 **Environment Variables:**
 
-- `NEBIUS_API_KEY` (optional): Your Nebius Token Factory API key for code generation
-  - Get your key at: <https://tokenfactory.nebius.com/project/api-keys>
-  - **Alternatively**, pass the key directly via the `nebiusApiKey` parameter (recommended for user-provided keys)
 - `NEBIUS_BASE_URL` (optional): Custom Nebius endpoint (default: <https://api.tokenfactory.nebius.com/v1/>)
-- `NEBIUS_MODEL` (optional): Default model to use (default: deepseek-ai/DeepSeek-R1-0528)
-  - **Alternatively**, pass the model via the `model` parameter
+
+**Note:** API key and model are now **required parameters** in the tool call for better visibility and control.
 
 **Example:**
 
@@ -361,13 +359,15 @@ Generate a complete, runnable export script for the discovered API using Claude 
   "arguments": {
     "analysisId": "discovery_1763346972243_az00w2jd",
     "toolName": "exportApiData",
+    "nebiusApiKey": "v1.CmQKHH...",
+    "model": "deepseek-ai/DeepSeek-R1-0528",
     "language": "typescript",
     "outputFormat": "json"
   }
 }
 ```
 
-**Example with user-provided API key:**
+**Example with Llama model:**
 
 ```json
 {
@@ -375,10 +375,10 @@ Generate a complete, runnable export script for the discovered API using Claude 
   "arguments": {
     "analysisId": "discovery_1763346972243_az00w2jd",
     "toolName": "exportApiData",
+    "nebiusApiKey": "v1.CmQKHH...",
+    "model": "meta-llama/Llama-3.3-70B-Instruct",
     "language": "python",
-    "outputFormat": "json",
-    "nebiusApiKey": "your-nebius-api-key-here",
-    "model": "meta-llama/Llama-3.3-70B-Instruct"
+    "outputFormat": "json"
   }
 }
 ```

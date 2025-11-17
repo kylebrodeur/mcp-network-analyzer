@@ -475,9 +475,8 @@ Generate runnable export scripts from discovered patterns using AI.
 
 **Features:**
 
-
 - Multi-language code generation (TypeScript, Python, JavaScript, Go)
-- User-supplied Nebius API keys (no rate limits)
+- **Required parameters:** Nebius API key and model selection (user must provide)
 - Selectable AI models (DeepSeek-R1, Llama-3.3-70B, QwQ-32B, etc.)
 - Automatic authentication, pagination, and rate limiting
 - Production-ready code with error handling
