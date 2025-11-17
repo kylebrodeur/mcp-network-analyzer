@@ -10,6 +10,58 @@ A Model Context Protocol (MCP) server that provides intelligent network request 
 - 🔍 **Data Search**: Query and search captured data
 - 🌐 **Universal**: Works with any website, not just specific platforms
 
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+pnpm install
+```
+
+### 2. Run Interactive Setup
+
+```bash
+pnpm run setup
+```
+
+The setup wizard will guide you through:
+- Choosing storage mode (Local, Cloud, HuggingFace Dataset, or Blaxel)
+- Configuring credentials (if needed)
+- Creating configuration files
+
+### 3. Build the Project
+
+```bash
+pnpm run build
+```
+
+### 4. Install to Claude Desktop (Optional)
+
+```bash
+pnpm run install-claude
+```
+
+Or manually add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "network-analyzer": {
+      "command": "node",
+      "args": ["/path/to/mcp-network-analyzer/dist/index.js"]
+    }
+  }
+}
+```
+
+### 5. Check Status
+
+```bash
+pnpm run status
+```
+
+This shows your configuration, data statistics, and tool availability.
+
 ## Installation
 
 ```bash
