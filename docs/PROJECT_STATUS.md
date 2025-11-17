@@ -1,7 +1,7 @@
 # MCP Network Analyzer - Project Status
 
 **Last Updated:** November 17, 2025  
-**Current Phase:** Phase 4 Complete - Code Generation with Nebius Token Factory Implemented
+**Current Phase:** Phase 4 Complete - Code Generation with HuggingFace + Nebius Implemented
 
 ---
 
@@ -22,13 +22,14 @@
 
 🚧 **Next Up - Hackathon Focus:**
 
-- **Phase 4**: ✅ **COMPLETE** - Code generation with Nebius Token Factory
+- **Phase 4**: ✅ **COMPLETE** - Code generation with HuggingFace + Nebius
   - `generate_export_tool` - Multi-language export script generation
-  - Nebius Token Factory integration (OpenAI-compatible API)
-  - User-supplied API keys support (no rate limiting concerns)
-  - Selectable models (DeepSeek-R1, Llama, QwQ, etc.)
-  - Template system with Handlebars fallback
-  - Comprehensive usage instructions generation
+  - HuggingFace Inference SDK with Nebius provider
+  - Secure API key storage in HuggingFace account settings
+  - Prompt files system for maintainable AI instructions
+  - Native HTTP client usage (fetch, requests)
+  - Selectable models via HuggingFace Hub
+  - Template system with comprehensive guidance
 - **Phase 3**: Analysis Tools - Next priority for hackathon
   - `analyze_captured_data` - Basic pattern matching
   - `discover_api_patterns` - Advanced API detection
@@ -304,17 +305,26 @@ Search and query captured data:
 ### Phase 4: Code Generation ✅ COMPLETE (Hackathon Priority)
 
 - ✅ Code generator (`src/lib/code-generator.ts`)
-- ✅ Nebius Token Factory integration (OpenAI-compatible API)
-- ✅ Template-based code generation with LLM
+- ✅ HuggingFace Inference SDK integration with Nebius provider
+- ✅ Prompt files system (`/prompts` directory)
+  - System-level instructions
+  - Language-specific guidance (TypeScript, Python)
+  - Runtime loading (no rebuild needed)
 - ✅ `generate_export_tool` tool
   - Multi-language support (TypeScript, Python, Go, JavaScript)
-  - User-supplied API keys (parameter or environment variable)
-  - Selectable models (DeepSeek-R1, Llama-3.3-70B, QwQ-32B, etc.)
+  - Native HTTP clients (fetch, requests, net/http)
+  - Secure authentication (HF_TOKEN environment variable)
+  - Model selection via HuggingFace Hub
   - Authentication injection
   - Error handling and retry logic
   - Rate limiting support
   - Pagination handling
   - Comprehensive usage instructions
+
+**Security Improvements:**
+- API keys stored in HuggingFace account settings (not in tool parameters)
+- No sensitive data in MCP logs or capture files
+- HF_TOKEN environment variable for authentication
 
 **Completed:** November 17, 2025 → **1 day (faster than targeted!)**
 
@@ -384,15 +394,17 @@ Search and query captured data:
 
 ### AI & Code Generation (Phase 4)
 
-- **AI Platform:** Nebius Token Factory (OpenAI-compatible API)
-- **AI Models:**
-  - DeepSeek-R1-0528 (default)
-  - Meta-Llama-3.3-70B-Instruct
-  - Qwen-QwQ-32B-Preview
-  - Other models available on Nebius
-- **Integration:** OpenAI SDK pointing to Nebius endpoint
-- **Use Cases:** Export code generation, API pattern analysis
-- **API Key:** User-supplied via parameter or environment variable
+- **AI Platform:** HuggingFace Inference with Nebius provider
+- **SDK:** @huggingface/inference
+- **AI Models:** All Nebius models available on HuggingFace Hub
+  - Qwen/Qwen2.5-VL-72B-Instruct (default)
+  - meta-llama/Llama-3.3-70B-Instruct
+  - Qwen/QwQ-32B-Preview
+  - And more via HuggingFace Hub
+- **Authentication:** HF_TOKEN environment variable
+- **Security:** API keys stored in HuggingFace account settings
+- **Prompts:** Modular prompt files in `/prompts` directory
+- **Use Cases:** Export code generation with native HTTP clients
 
 ### Modal + Gradio (Hackathon UI)
 
@@ -476,8 +488,11 @@ Generate runnable export scripts from discovered patterns using AI.
 **Features:**
 
 - Multi-language code generation (TypeScript, Python, JavaScript, Go)
-- **Required parameters:** Nebius API key and model selection (user must provide)
-- Selectable AI models (DeepSeek-R1, Llama-3.3-70B, QwQ-32B, etc.)
+- **Secure authentication:** HF_TOKEN environment variable (no keys in parameters)
+- Nebius API key configured in HuggingFace account settings
+- Selectable AI models via HuggingFace Hub
+- Native HTTP clients (fetch, requests, net/http)
+- Modular prompt system for easy customization
 - Automatic authentication, pagination, and rate limiting
 - Production-ready code with error handling
 
