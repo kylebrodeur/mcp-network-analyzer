@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@huggingface/inference':
+        specifier: ^4.13.3
+        version: 4.13.3
       '@modelcontextprotocol/sdk':
         specifier: ^1.22.0
         version: 1.22.0
@@ -17,9 +20,6 @@ importers:
       handlebars:
         specifier: ^4.7.8
         version: 4.7.8
-      openai:
-        specifier: ^6.9.0
-        version: 6.9.0(ws@8.18.3)(zod@3.25.76)
       playwright:
         specifier: ^1.56.1
         version: 1.56.1
@@ -217,6 +217,17 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@huggingface/inference@4.13.3':
+    resolution: {integrity: sha512-ZpyIlO9Xd0sDiD3QZSQMsJ19iFXYOHHxrgA6pK5Mh5RMY27XlnbLNhazAAaBsmen8vWG6SlGHlyjl7kvjlNoqQ==}
+    engines: {node: '>=18'}
+
+  '@huggingface/jinja@0.5.1':
+    resolution: {integrity: sha512-yUZLld4lrM9iFxHCwFQ7D1HW2MWMwSbeB7WzWqFYDWK+rEb+WldkLdAJxUPOmgICMHZLzZGVcVjFh3w/YGubng==}
+    engines: {node: '>=18'}
+
+  '@huggingface/tasks@0.19.63':
+    resolution: {integrity: sha512-hmd8e5fdjRiIJE7/EYWXS+Pm2SAu89xjZEgfZddN10ubWqlelXLyj2YgHZrVDEVkVA+5+ImMZUpQIez7b2//fw==}
 
   '@modelcontextprotocol/sdk@1.22.0':
     resolution: {integrity: sha512-VUpl106XVTCpDmTBil2ehgJZjhyLY2QZikzF8NvTXtLRF1CvO5iEE2UNZdVIUer35vFOwMKYeUGbjJtvPWan3g==}
@@ -856,18 +867,6 @@ packages:
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
-  openai@6.9.0:
-    resolution: {integrity: sha512-n2sJRYmM+xfJ0l3OfH8eNnIyv3nQY7L08gZQu3dw6wSdfPtKAk92L83M2NIP5SS8Cl/bsBBG3yKzEOjkx0O+7A==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.25 || ^4.0
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-
   pac-proxy-agent@7.2.0:
     resolution: {integrity: sha512-TEB8ESquiLMc0lV8vcd5Ql/JAKAoyzHFXaStwjkzpOpC5Yv+pIzLfHvjTSdf3vpa2bMiUQrg9i6276yn8666aA==}
     engines: {node: '>= 14'}
@@ -1323,6 +1322,15 @@ snapshots:
 
   '@esbuild/win32-x64@0.25.12':
     optional: true
+
+  '@huggingface/inference@4.13.3':
+    dependencies:
+      '@huggingface/jinja': 0.5.1
+      '@huggingface/tasks': 0.19.63
+
+  '@huggingface/jinja@0.5.1': {}
+
+  '@huggingface/tasks@0.19.63': {}
 
   '@modelcontextprotocol/sdk@1.22.0':
     dependencies:
@@ -2005,11 +2013,6 @@ snapshots:
   once@1.4.0:
     dependencies:
       wrappy: 1.0.2
-
-  openai@6.9.0(ws@8.18.3)(zod@3.25.76):
-    optionalDependencies:
-      ws: 8.18.3
-      zod: 3.25.76
 
   pac-proxy-agent@7.2.0:
     dependencies:

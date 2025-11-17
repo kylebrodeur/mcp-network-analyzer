@@ -3,10 +3,16 @@
  * Generates export scripts in multiple languages from discovered API patterns
  */
 
+import { HfInference } from "@huggingface/inference";
 import Handlebars from "handlebars";
 import { readFile } from "node:fs/promises";
-import { OpenAI } from "openai";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { APIPattern } from "./pattern-matcher.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PROJECT_ROOT = join(__dirname, "../..");
 
 export interface CodeGenerationOptions {
   language: "typescript" | "python" | "javascript" | "go";
@@ -31,58 +37,55 @@ export interface CodeGenerationResult {
 }
 
 /**
- * Code generator class using Nebius Token Factory (OpenAI-compatible API)
+ * Code generator class using HuggingFace Inference with Nebius provider
+ * API key is securely stored in HuggingFace account settings
  */
 export class CodeGenerator {
-  private client: OpenAI;
+  private client: HfInference;
   private model: string;
 
-  constructor(apiKey?: string, baseUrl?: string, model?: string) {
-    const key = apiKey || process.env.NEBIUS_API_KEY;
-    const url = baseUrl || process.env.NEBIUS_BASE_URL || "https://api.tokenfactory.nebius.com/v1/";
-    this.model = model || process.env.NEBIUS_MODEL || "deepseek-ai/DeepSeek-R1-0528";
+  constructor(model?: string) {
+    // HuggingFace token should be set in environment or HF config
+    // Nebius API key should be configured in HuggingFace account:
+    // https://huggingface.co/settings/inference-providers
+    const hfToken = process.env.HF_TOKEN || process.env.HUGGING_FACE_HUB_TOKEN;
     
-    if (!key) {
-      throw new Error(
-        "Nebius API key required. Set NEBIUS_API_KEY environment variable. Get your key at: https://studio.nebius.ai/settings/api-keys"
-      );
-    }
+    this.model = model || process.env.NEBIUS_MODEL || "Qwen/Qwen2.5-VL-72B-Instruct";
     
-    this.client = new OpenAI({
-      baseURL: url,
-      apiKey: key,
-    });
+    this.client = new HfInference(hfToken);
   }
 
   /**
-   * Generate export script code using Nebius Token Factory (OpenAI-compatible API)
+   * Generate export script code using HuggingFace Inference with Nebius provider
    */
   async generate(options: CodeGenerationOptions): Promise<CodeGenerationResult> {
     try {
-      const prompt = this.buildPrompt(options);
+      const systemPrompt = await this.loadSystemPrompt();
+      const userPrompt = await this.buildPromptFromTemplate(options);
 
-      const completion = await this.client.chat.completions.create({
+      const response = await this.client.chatCompletion({
         model: this.model,
-        max_tokens: 4096,
+        provider: "nebius",
         messages: [
           {
             role: "system",
-            content: "You are an expert programmer who generates clean, production-ready code. Always output only the code without explanations or markdown formatting.",
+            content: systemPrompt,
           },
           {
             role: "user",
-            content: prompt,
+            content: userPrompt,
           },
         ],
+        max_tokens: 4096,
       });
 
-      const code = this.extractCode(completion.choices[0]?.message?.content || "");
+      const code = this.extractCode(response.choices[0]?.message?.content || "");
 
       return {
         success: true,
         code,
         language: options.language,
-        tokensUsed: completion.usage?.total_tokens,
+        tokensUsed: response.usage?.total_tokens,
       };
     } catch (error) {
       return {
@@ -94,12 +97,36 @@ export class CodeGenerator {
   }
 
   /**
-   * Build prompt for the LLM
+   * Load system prompt from file
    */
-  private buildPrompt(options: CodeGenerationOptions): string {
-    const languageDetails = this.getLanguageDetails(options.language);
+  private async loadSystemPrompt(): Promise<string> {
+    try {
+      const systemPromptPath = join(PROJECT_ROOT, "prompts", "code-generation-system.md");
+      return await readFile(systemPromptPath, "utf-8");
+    } catch {
+      // Fallback to inline prompt if file not found
+      return "You are an expert programmer who generates clean, production-ready code. Always output only the code without explanations or markdown formatting. Use native HTTP clients (fetch for TypeScript/JavaScript, requests for Python).";
+    }
+  }
 
-    let prompt = `Generate a ${options.language} script named "${options.toolName}" that exports data from the following API endpoints:\n\n`;
+  /**
+   * Build prompt from template using current options
+   */
+  private async buildPromptFromTemplate(options: CodeGenerationOptions): Promise<string> {
+    const languageDetails = this.getLanguageDetails(options.language);
+    
+    // Load language-specific guidance if available
+    let languageGuidance = "";
+    try {
+      const guidancePath = join(PROJECT_ROOT, "prompts", `code-generation-${options.language}.md`);
+      languageGuidance = await readFile(guidancePath, "utf-8");
+    } catch {
+      // No language-specific guidance, that's okay
+    }
+
+    let prompt = languageGuidance ? `${languageGuidance}\n\n---\n\n` : "";
+    
+    prompt += `Generate a ${options.language} script named "${options.toolName}" that exports data from the following API endpoints:\n\n`;
 
     // Add API patterns
     prompt += "## API Endpoints\n\n";

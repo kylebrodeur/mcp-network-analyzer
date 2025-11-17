@@ -30,10 +30,10 @@
   "license": "MIT",
   "packageManager": "pnpm@10.21.0",
   "dependencies": {
+    "@huggingface/inference": "^4.13.3",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "express": "^5.1.0",
     "handlebars": "^4.7.8",
-    "openai": "^6.9.0",
     "playwright": "^1.56.1",
     "puppeteer": "^24.30.0",
     "puppeteer-extra": "^3.3.6",

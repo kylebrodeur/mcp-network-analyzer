@@ -137,8 +137,7 @@ async function registerTools(server: McpServer) {
   const generateExportToolSchema = z.object({
     analysisId: z.string().min(1),
     toolName: z.string().min(1),
-    nebiusApiKey: z.string().min(1).describe('Your Nebius Token Factory API key - get one at https://tokenfactory.nebius.com/project/api-keys'),
-    model: z.string().min(1).default('deepseek-ai/DeepSeek-R1-0528').describe('Model to use: deepseek-ai/DeepSeek-R1-0528, meta-llama/Llama-3.3-70B-Instruct, Qwen/QwQ-32B-Preview'),
+    model: z.string().min(1).default('Qwen/Qwen2.5-VL-72B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').optional(),
     targetUrl: z.string().url().optional(),
     outputDirectory: z.string().optional(),
     outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),
@@ -473,12 +472,11 @@ async function registerTools(server: McpServer) {
         'Renders a Handlebars template to build a reusable export script that replays discovered API calls.',
       inputSchema: generateExportToolSchema.shape
     },
-    async ({ analysisId, toolName, nebiusApiKey, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
+    async ({ analysisId, toolName, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
       try {
         const result = await generateExportTool({
           analysisId,
           toolName,
-          nebiusApiKey,
           model,
           targetUrl,
           outputDirectory,

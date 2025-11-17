@@ -316,10 +316,9 @@ Generate a complete, runnable export script for the discovered API using Claude 
 
 - `analysisId` (string, required): ID from discover_api_patterns
 - `toolName` (string, required): Name for the generated tool
-- `nebiusApiKey` (string, required): Your Nebius Token Factory API key
-  - Get your key at: <https://tokenfactory.nebius.com/project/api-keys>
-- `model` (string, required): Nebius model to use (default: deepseek-ai/DeepSeek-R1-0528)
-  - Available models: `deepseek-ai/DeepSeek-R1-0528`, `meta-llama/Llama-3.3-70B-Instruct`, `Qwen/QwQ-32B-Preview`
+- `model` (string, optional): Model to use via HuggingFace + Nebius provider (default: Qwen/Qwen2.5-VL-72B-Instruct)
+  - Available models: All Nebius models on HuggingFace Hub
+  - Configure Nebius API key at: <https://huggingface.co/settings/inference-providers>
 - `targetUrl` (string, optional): Override target URL (auto-detected if not provided)
 - `outputDirectory` (string, optional): Custom output directory (default: data/generated)
 - `outputFormat` (string, optional): Output format (json, csv, sqlite - default: json)
@@ -337,19 +336,31 @@ Generate a complete, runnable export script for the discovered API using Claude 
 
 **Features:**
 
-- 🤖 **AI-Powered**: Uses Nebius Token Factory (DeepSeek-R1 or other models) for intelligent code generation
-- 🔐 **Authentication**: Automatic auth injection (Bearer, API key, cookies)
+- 🤖 **AI-Powered**: Uses HuggingFace Inference with Nebius provider for intelligent code generation
+- 🔐 **Secure**: API keys stored in HuggingFace account settings, not passed as parameters
+- 🔐 **Authentication**: Automatic auth injection (Bearer, API key, cookies) in generated code
 - 📄 **Pagination**: Handles pagination automatically
 - ⚡ **Rate Limiting**: Configurable delays between requests
 - 🛡️ **Error Handling**: Retry logic and comprehensive error handling
 - 📝 **Type Safety**: TypeScript types or Python type hints
 - 🚀 **Production Ready**: Executable immediately after generation
 
+**Setup:**
+
+1. Get a Nebius Token Factory API key: <https://tokenfactory.nebius.com/project/api-keys>
+2. Add it to your HuggingFace account: <https://huggingface.co/settings/inference-providers>
+   - Click the key icon in the "Nebius Token Factory" row
+   - Enter your Nebius API key
+3. Set your HuggingFace token as an environment variable:
+
+   ```bash
+   export HF_TOKEN="hf_your_token_here"
+   ```
+
 **Environment Variables:**
 
-- `NEBIUS_BASE_URL` (optional): Custom Nebius endpoint (default: <https://api.tokenfactory.nebius.com/v1/>)
-
-**Note:** API key and model are now **required parameters** in the tool call for better visibility and control.
+- `HF_TOKEN` (required): Your HuggingFace token (get from <https://huggingface.co/settings/tokens>)
+- `NEBIUS_MODEL` (optional): Default model to use (default: Qwen/Qwen2.5-VL-72B-Instruct)
 
 **Example:**
 
@@ -359,15 +370,13 @@ Generate a complete, runnable export script for the discovered API using Claude 
   "arguments": {
     "analysisId": "discovery_1763346972243_az00w2jd",
     "toolName": "exportApiData",
-    "nebiusApiKey": "v1.CmQKHH...",
-    "model": "deepseek-ai/DeepSeek-R1-0528",
     "language": "typescript",
     "outputFormat": "json"
   }
 }
 ```
 
-**Example with Llama model:**
+**Example with custom model:**
 
 ```json
 {
@@ -375,7 +384,6 @@ Generate a complete, runnable export script for the discovered API using Claude 
   "arguments": {
     "analysisId": "discovery_1763346972243_az00w2jd",
     "toolName": "exportApiData",
-    "nebiusApiKey": "v1.CmQKHH...",
     "model": "meta-llama/Llama-3.3-70B-Instruct",
     "language": "python",
     "outputFormat": "json"

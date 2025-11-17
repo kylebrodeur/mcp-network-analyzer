@@ -17,7 +17,6 @@ export interface GenerateOptions {
   outputFormat?: "json" | "csv" | "sqlite";
   incremental?: boolean;
   language?: "typescript" | "python" | "javascript" | "go";
-  nebiusApiKey?: string;
   model?: string;
 }
 
@@ -93,8 +92,8 @@ export async function generateExportTool(
       paginationParams: discovery.pagination?.params,
     };
 
-    // Generate code using Nebius Token Factory
-    const generator = new CodeGenerator(options.nebiusApiKey, undefined, options.model);
+    // Generate code using HuggingFace Inference with Nebius provider
+    const generator = new CodeGenerator(options.model);
     const result = await generator.generate(codeGenOptions);
 
     if (!result.success || !result.code) {
