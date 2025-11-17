@@ -308,20 +308,96 @@ Deep analysis of API structure with pattern recognition.
 
 **Returns:** Detailed API patterns, data models, and extraction strategies
 
-### `generate_export_tool` ⏳ Planned
+### `generate_export_tool` ✅ Implemented
 
-Generate a complete, runnable export script for the discovered API.
+Generate a complete, runnable export script for the discovered API using Claude AI.
 
 **Parameters:**
 
 - `analysisId` (string, required): ID from discover_api_patterns
 - `toolName` (string, required): Name for the generated tool
-- `targetUrl` (string, optional): Override target URL
-- `outputDirectory` (string, optional): Custom output directory
+- `targetUrl` (string, optional): Override target URL (auto-detected if not provided)
+- `outputDirectory` (string, optional): Custom output directory (default: data/generated)
 - `outputFormat` (string, optional): Output format (json, csv, sqlite - default: json)
-- `incremental` (boolean, optional): Support incremental exports
+- `language` (string, optional): Programming language (typescript, python, javascript, go - default: typescript)
+- `nebiusApiKey` (string, optional): Nebius Token Factory API key (if not set via environment variable)
+- `model` (string, optional): Nebius model to use (default: deepseek-ai/DeepSeek-R1-0528)
+  - Available models: deepseek-ai/DeepSeek-R1-0528, meta-llama/Llama-3.3-70B-Instruct, Qwen/QwQ-32B-Preview, etc.
+- `incremental` (boolean, optional): Support incremental exports (planned feature)
 
-**Returns:** Path to generated export script with usage instructions
+**Returns:**
+
+- `generatedPath`: Full path to generated script
+- `fileName`: Name of the generated file
+- `language`: Programming language used
+- `linesOfCode`: Number of lines generated
+- `tokensUsed`: Claude API tokens consumed
+- `instructions`: Usage instructions for running the script
+
+**Features:**
+
+- 🤖 **AI-Powered**: Uses Nebius Token Factory (DeepSeek-R1 or other models) for intelligent code generation
+- 🔐 **Authentication**: Automatic auth injection (Bearer, API key, cookies)
+- 📄 **Pagination**: Handles pagination automatically
+- ⚡ **Rate Limiting**: Configurable delays between requests
+- 🛡️ **Error Handling**: Retry logic and comprehensive error handling
+- 📝 **Type Safety**: TypeScript types or Python type hints
+- 🚀 **Production Ready**: Executable immediately after generation
+
+**Environment Variables:**
+
+- `NEBIUS_API_KEY` (optional): Your Nebius Token Factory API key for code generation
+  - Get your key at: <https://tokenfactory.nebius.com/project/api-keys>
+  - **Alternatively**, pass the key directly via the `nebiusApiKey` parameter (recommended for user-provided keys)
+- `NEBIUS_BASE_URL` (optional): Custom Nebius endpoint (default: <https://api.tokenfactory.nebius.com/v1/>)
+- `NEBIUS_MODEL` (optional): Default model to use (default: deepseek-ai/DeepSeek-R1-0528)
+  - **Alternatively**, pass the model via the `model` parameter
+
+**Example:**
+
+```json
+{
+  "tool": "generate_export_tool",
+  "arguments": {
+    "analysisId": "discovery_1763346972243_az00w2jd",
+    "toolName": "exportApiData",
+    "language": "typescript",
+    "outputFormat": "json"
+  }
+}
+```
+
+**Example with user-provided API key:**
+
+```json
+{
+  "tool": "generate_export_tool",
+  "arguments": {
+    "analysisId": "discovery_1763346972243_az00w2jd",
+    "toolName": "exportApiData",
+    "language": "python",
+    "outputFormat": "json",
+    "nebiusApiKey": "your-nebius-api-key-here",
+    "model": "meta-llama/Llama-3.3-70B-Instruct"
+  }
+}
+```
+
+**Generated Script Usage:**
+
+```bash
+# TypeScript
+tsx data/generated/exportApiData.ts --output export.json --auth YOUR_TOKEN
+
+# Python
+python data/generated/exportApiData.py --output export.json --auth YOUR_TOKEN
+
+# JavaScript
+node data/generated/exportApiData.js --output export.json
+
+# Go
+cd data/generated && go build exportApiData.go && ./exportApiData --output export.json
+```
 
 ### `search_exported_data` ⏳ Planned
 

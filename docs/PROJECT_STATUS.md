@@ -1,7 +1,7 @@
 # MCP Network Analyzer - Project Status
 
-**Last Updated:** November 15, 2025  
-**Current Phase:** Phase 2 Complete - Network Capture & Storage Implemented
+**Last Updated:** November 17, 2025  
+**Current Phase:** Phase 4 Complete - Code Generation with Nebius Token Factory Implemented
 
 ---
 
@@ -22,13 +22,17 @@
 
 🚧 **Next Up - Hackathon Focus:**
 
-- **Phase 3**: Complete analysis tools implementation
-  - `analyze_captured_data` - Pattern detection with rule-based matching
-  - `discover_api_patterns` - REST, pagination, auth detection
-- **Phase 4**: Code generation with Claude API
+- **Phase 4**: ✅ **COMPLETE** - Code generation with Nebius Token Factory
   - `generate_export_tool` - Multi-language export script generation
-  - Direct Anthropic API integration (no Modal needed for this)
-- **Modal + Gradio 6**: Separate UI deployment for hackathon
+  - Nebius Token Factory integration (OpenAI-compatible API)
+  - User-supplied API keys support (no rate limiting concerns)
+  - Selectable models (DeepSeek-R1, Llama, QwQ, etc.)
+  - Template system with Handlebars fallback
+  - Comprehensive usage instructions generation
+- **Phase 3**: Analysis Tools - Next priority for hackathon
+  - `analyze_captured_data` - Basic pattern matching
+  - `discover_api_patterns` - Advanced API detection
+- **Modal + Gradio 6**: Separate UI deployment for hackathon (optional)
   - Beautiful web interface with Gradio 6
   - Code generation and API review tabs
   - Visualization charts for captured data
@@ -297,19 +301,22 @@ Search and query captured data:
 
 **Estimated Time:** 3-5 days → **Target: 2 days for hackathon**
 
-### Phase 4: Code Generation 🚧 NEXT (Hackathon Priority)
+### Phase 4: Code Generation ✅ COMPLETE (Hackathon Priority)
 
-- [ ] Code generator (`src/lib/code-generator.ts`)
-- [ ] Anthropic API integration (direct, no Modal)
-- [ ] Template-based code generation with Claude
-- [ ] `generate_export_tool` tool
+- ✅ Code generator (`src/lib/code-generator.ts`)
+- ✅ Nebius Token Factory integration (OpenAI-compatible API)
+- ✅ Template-based code generation with LLM
+- ✅ `generate_export_tool` tool
   - Multi-language support (TypeScript, Python, Go, JavaScript)
+  - User-supplied API keys (parameter or environment variable)
+  - Selectable models (DeepSeek-R1, Llama-3.3-70B, QwQ-32B, etc.)
   - Authentication injection
   - Error handling and retry logic
   - Rate limiting support
   - Pagination handling
+  - Comprehensive usage instructions
 
-**Estimated Time:** 3-4 days → **Target: 2 days for hackathon**
+**Completed:** November 17, 2025 → **1 day (faster than targeted!)**
 
 ### Phase 4.5: Modal + Gradio UI 🆕 HACKATHON ADDITION
 
@@ -377,9 +384,15 @@ Search and query captured data:
 
 ### AI & Code Generation (Phase 4)
 
-- **AI Model:** Claude 3.5 Sonnet (Anthropic API)
-- **Integration:** Direct API calls from Blaxel deployment
+- **AI Platform:** Nebius Token Factory (OpenAI-compatible API)
+- **AI Models:**
+  - DeepSeek-R1-0528 (default)
+  - Meta-Llama-3.3-70B-Instruct
+  - Qwen-QwQ-32B-Preview
+  - Other models available on Nebius
+- **Integration:** OpenAI SDK pointing to Nebius endpoint
 - **Use Cases:** Export code generation, API pattern analysis
+- **API Key:** User-supplied via parameter or environment variable
 
 ### Modal + Gradio (Hackathon UI)
 
@@ -454,11 +467,20 @@ Deep pattern analysis with confidence scoring.
 
 **Status:** Schema registered, implementation needed
 
-### 🚧 `generate_export_tool` - PLANNED
+### ✅ `generate_export_tool` - IMPLEMENTED
 
-Generate runnable export scripts from discovered patterns.
+Generate runnable export scripts from discovered patterns using AI.
 
-**Status:** Schema registered, implementation planned for Phase 4
+**Status:** Fully functional, tested, production-ready
+
+**Features:**
+
+
+- Multi-language code generation (TypeScript, Python, JavaScript, Go)
+- User-supplied Nebius API keys (no rate limits)
+- Selectable AI models (DeepSeek-R1, Llama-3.3-70B, QwQ-32B, etc.)
+- Automatic authentication, pagination, and rate limiting
+- Production-ready code with error handling
 
 ### 🚧 `search_exported_data` - PLANNED
 
@@ -559,11 +581,10 @@ npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport stream
 
 ### Current Limitations
 
-1. **Analysis tools not implemented** - Can capture but not analyze yet
-2. **No code generation** - Cannot auto-generate export scripts yet
-3. **No search capability** - Cannot query captured data yet
-4. **Cloud adapters are mocks** - Need real SDK implementations
-5. **Blaxel adapter is mock** - Awaiting production API access
+1. **Analysis tools not implemented** - Can capture but not analyze yet (Phase 3 in progress)
+2. **No search capability** - Cannot query captured data yet (Phase 5 planned)
+3. **Cloud adapters are mocks** - Need real SDK implementations
+4. **Blaxel adapter is mock** - Awaiting production API access
 
 ### Technical Debt
 
@@ -620,4 +641,4 @@ npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport stream
 
 ---
 
-*This status document is updated as development progresses. Last updated: November 15, 2025*
+*This status document is updated as development progresses. Last updated: November 17, 2025*
