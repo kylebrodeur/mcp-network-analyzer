@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { analyzeCapturedData } from './tools/analyze.js';
 import { captureNetworkRequests } from './tools/capture.js';
 import { discoverApiPatterns } from './tools/discover.js';
+import { generateExportTool } from './tools/generate.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
@@ -131,6 +132,18 @@ async function registerTools(server: McpServer) {
     analysisId: z.string().min(1),
     minConfidence: z.number().min(0).max(1).default(0.5).optional(),
     includeAuthInsights: z.boolean().optional()
+  });
+
+  const generateExportToolSchema = z.object({
+    analysisId: z.string().min(1),
+    toolName: z.string().min(1),
+    targetUrl: z.string().url().optional(),
+    outputDirectory: z.string().optional(),
+    outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),
+    incremental: z.boolean().optional(),
+    language: z.enum(['typescript', 'python', 'javascript', 'go']).default('typescript').optional(),
+    nebiusApiKey: z.string().optional(),
+    model: z.string().optional()
   });
 
   // Register capture_network_requests tool
@@ -444,6 +457,89 @@ async function registerTools(server: McpServer) {
             {
               type: 'text' as const,
               text: `Error discovering API patterns: ${error instanceof Error ? error.message : String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    'generate_export_tool',
+    {
+      title: 'Generate Export Tool',
+      description:
+        'Renders a Handlebars template to build a reusable export script that replays discovered API calls.',
+      inputSchema: generateExportToolSchema.shape
+    },
+    async ({ analysisId, toolName, targetUrl, outputDirectory, outputFormat, incremental, language, nebiusApiKey, model }) => {
+      try {
+        const result = await generateExportTool({
+          analysisId,
+          toolName,
+          targetUrl,
+          outputDirectory,
+          outputFormat,
+          incremental,
+          language,
+          nebiusApiKey,
+          model
+        });
+
+        if (!result.success) {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: `Failed to generate export tool: ${result.error}`
+              }
+            ],
+            isError: true
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# 🎉 Export Tool Generated Successfully',
+                '',
+                `**File:** ${result.fileName}`,
+                `**Language:** ${result.language}`,
+                `**Path:** ${result.generatedPath}`,
+                `**Lines of Code:** ${result.linesOfCode}`,
+                result.tokensUsed ? `**Tokens Used:** ${result.tokensUsed}` : '',
+                '',
+                '## 📖 Usage Instructions',
+                '',
+                result.instructions || 'See the generated file for usage instructions.',
+                '',
+                '## ⚠️ Important Notes',
+                '',
+                '1. **Review the code** before running it',
+                '2. **Test with small datasets** first',
+                '3. **Monitor rate limits** to avoid being blocked',
+                '4. **Customize as needed** for your specific use case',
+                '',
+                '## 🚀 Next Steps',
+                '',
+                '1. Review and test the generated export tool',
+                '2. Run it to export data from the target API',
+                '3. Use search_exported_data to query the exported data'
+              ]
+                .filter(line => line !== '')
+                .join('\\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Error generating export tool: ${error instanceof Error ? error.message : String(error)}`
             }
           ],
           isError: true
