@@ -6,9 +6,10 @@ A Model Context Protocol (MCP) server that provides intelligent network request 
 
 - 🕵️ **Network Traffic Capture**: Intercept and record HTTP requests/responses from any website
 - 🧠 **Intelligent API Discovery**: Automatically identify REST patterns, authentication methods, and data structures
-- 🛠️ **Tool Generation**: Generate custom export scripts for discovered APIs
+- 🛠️ **Tool Generation**: Generate custom export scripts for discovered APIs using HuggingFace + Nebius AI
 - 🔍 **Data Search**: Query and search captured data
 - 🌐 **Universal**: Works with any website, not just specific platforms
+- 🎨 **Gradio Web UI**: Beautiful interface for non-technical users (deploy to Modal)
 
 ## Quick Start
 
