@@ -50,7 +50,7 @@ export class CodeGenerator {
     // https://huggingface.co/settings/inference-providers
     const hfToken = process.env.HF_TOKEN || process.env.HUGGING_FACE_HUB_TOKEN;
     
-    this.model = model || process.env.NEBIUS_MODEL || "Qwen/Qwen2.5-VL-72B-Instruct";
+    this.model = model || process.env.NEBIUS_MODEL || "Qwen/Qwen3-Coder-30B-A3B-Instruct";
     
     this.client = new HfInference(hfToken);
   }
@@ -77,6 +77,7 @@ export class CodeGenerator {
           },
         ],
         max_tokens: 4096,
+        temperature: 0.7,
       });
 
       const code = this.extractCode(response.choices[0]?.message?.content || "");

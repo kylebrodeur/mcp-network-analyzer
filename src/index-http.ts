@@ -1,15 +1,48 @@
 import express from 'express';
+import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+
+// Load environment variables from .env file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PROJECT_ROOT = join(__dirname, '..');
+
+async function loadEnvFile() {
+  try {
+    const envPath = join(PROJECT_ROOT, '.env');
+    const envContent = await readFile(envPath, 'utf-8');
+    const lines = envContent.split('\n');
+    for (const line of lines) {
+      if (line.includes('=') && !line.trim().startsWith('#')) {
+        const [key, ...valueParts] = line.split('=');
+        const value = valueParts.join('=').trim();
+        if (key.trim() && !process.env[key.trim()]) {
+          process.env[key.trim()] = value;
+        }
+      }
+    }
+  } catch (error) {
+    // .env file not found or not readable - that's ok
+  }
+}
+
+// Load environment variables before anything else
+await loadEnvFile();
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 
+import { DatabaseService } from './lib/database.js';
+import { Storage } from './lib/storage.js';
 import { analyzeCapturedData } from './tools/analyze.js';
 import { captureNetworkRequests } from './tools/capture.js';
 import { discoverApiPatterns } from './tools/discover.js';
 import { generateExportTool } from './tools/generate.js';
+import { getDatabaseStats, listAnalyses, listDiscoveries } from './tools/query.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
@@ -27,6 +60,10 @@ function buildUsageInstructions(): string {
 }
 
 async function main() {
+  // Initialize storage and database
+  await Storage.ensureDirectories();
+  await DatabaseService.getInstance().initialize();
+  
   const server = new McpServer(
     {
       name: 'mcp-network-analyzer',
@@ -55,7 +92,7 @@ async function main() {
     res.json({ status: 'ok', version: packageJson.version });
   });
 
-  // MCP endpoint using Streamable HTTP transport
+  // MCP endpoint using Streamable HTTP transport (POST only)
   app.post('/mcp', async (req, res) => {
     // Create a new transport for each request to prevent request ID collisions
     const transport = new StreamableHTTPServerTransport({
@@ -71,25 +108,11 @@ async function main() {
     await transport.handleRequest(req, res, req.body);
   });
 
-  // SSE endpoint for streaming (required for MCP Inspector)
-  app.get('/mcp', async (req, res) => {
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-      enableJsonResponse: true
-    });
-
-    res.on('close', () => {
-      transport.close();
-    });
-
-    await server.connect(transport);
-    await transport.handleRequest(req, res);
-  });
-
   const httpServer = app.listen(PORT, HOST, () => {
-    console.error(`[HTTP] MCP Network Analyzer listening on http://${HOST}:${PORT}/mcp`);
+    console.error(`[HTTP] MCP Network Analyzer listening on http://${HOST}:${PORT}/mcp (Streamable HTTP)`);
     console.error(`[HTTP] Health check: http://${HOST}:${PORT}/health`);
-    console.error(`[HTTP] Blaxel endpoint format: https://run.blaxel.ai/{workspace}/functions/{server-name}/mcp`);
+    console.error(`[HTTP] Blaxel endpoint: https://run.blaxel.ai/{workspace}/functions/{server-name}/mcp`);
+    console.error(`[HTTP] Transport: Streamable HTTP (POST requests with JSON)`);
   });
 
   httpServer.on('error', (error) => {
@@ -108,6 +131,166 @@ async function main() {
     httpServer.close();
     process.exit(0);
   });
+
+  // Define schemas for query tools
+  const listAnalysesSchema = z.object({
+    limit: z.number().optional(),
+    status: z.enum(['processing', 'complete', 'failed']).optional()
+  });
+
+  const listDiscoveriesSchema = z.object({
+    limit: z.number().optional(),
+    analysisId: z.string().optional(),
+    status: z.enum(['processing', 'complete', 'failed']).optional()
+  });
+
+  // Register query tools for database access
+  server.registerTool(
+    'list_analyses',
+    {
+      title: 'List Analyses',
+      description: 'List all analyses with optional filtering by status',
+      inputSchema: listAnalysesSchema.shape
+    },
+    async ({ limit, status }: { limit?: number; status?: 'processing' | 'complete' | 'failed' }) => {
+      try {
+        const result = await listAnalyses({ limit, status });
+        
+        if (!result.success) {
+          return {
+            content: [{ type: 'text' as const, text: `Error: ${result.error}` }],
+            isError: true
+          };
+        }
+        
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# Analyses List',
+                '',
+                `**Total:** ${result.data.total}`,
+                `**Filtered:** ${result.data.filtered}`,
+                '',
+                '## Analyses',
+                ...result.data.analyses.map((a: any) => 
+                  `- **${a.id}** (${a.status}) - Capture: ${a.captureId} - Requests: ${a.totalRequests}`
+                ),
+                '',
+                '## Raw Data (JSON)',
+                '```json',
+                JSON.stringify(result.data, null, 2),
+                '```'
+              ].join('\\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${error}` }],
+          isError: true
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    'list_discoveries',
+    {
+      title: 'List Discoveries',
+      description: 'List all discoveries with optional filtering',
+      inputSchema: listDiscoveriesSchema.shape
+    },
+    async ({ limit, analysisId, status }: { limit?: number; analysisId?: string; status?: 'processing' | 'complete' | 'failed' }) => {
+      try {
+        const result = await listDiscoveries({ limit, analysisId, status });
+        
+        if (!result.success) {
+          return {
+            content: [{ type: 'text' as const, text: `Error: ${result.error}` }],
+            isError: true
+          };
+        }
+        
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# Discoveries List',
+                '',
+                `**Total:** ${result.data.total}`,
+                `**Filtered:** ${result.data.filtered}`,
+                '',
+                '## Discoveries',
+                ...result.data.discoveries.map((d: any) => 
+                  `- **${d.id}** (${d.status}) - Analysis: ${d.analysisId} - Patterns: ${d.patternsFound}`
+                ),
+                '',
+                '## Raw Data (JSON)',
+                '```json',
+                JSON.stringify(result.data, null, 2),
+                '```'
+              ].join('\\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${error}` }],
+          isError: true
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_database_stats',
+    {
+      title: 'Get Database Statistics',
+      description: 'Get overall statistics about the MCP database',
+      inputSchema: {}
+    },
+    async () => {
+      try {
+        const result = await getDatabaseStats();
+        
+        if (!result.success) {
+          return {
+            content: [{ type: 'text' as const, text: `Error: ${result.error}` }],
+            isError: true
+          };
+        }
+        
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# Database Statistics',
+                '',
+                `**Captures:** ${result.data.captures}`,
+                `**Analyses:** ${result.data.analyses}`,
+                `**Discoveries:** ${result.data.discoveries}`,
+                `**Generations:** ${result.data.generations}`,
+                '',
+                '## Raw Data (JSON)',
+                '```json',
+                JSON.stringify(result.data, null, 2),
+                '```'
+              ].join('\\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${error}` }],
+          isError: true
+        };
+      }
+    }
+  );
 }
 
 // Tool registration function (extracted from index.ts logic)
@@ -135,9 +318,9 @@ async function registerTools(server: McpServer) {
   });
 
   const generateExportToolSchema = z.object({
-    analysisId: z.string().min(1),
+    discoveryId: z.string().min(1),
     toolName: z.string().min(1),
-    model: z.string().min(1).default('Qwen/Qwen2.5-VL-72B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').optional(),
+    model: z.string().min(1).default('Qwen/Qwen3-Coder-30B-A3B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').optional(),
     targetUrl: z.string().url().optional(),
     outputDirectory: z.string().optional(),
     outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),
@@ -333,10 +516,15 @@ async function registerTools(server: McpServer) {
                 ...result.recommendations.map((rec, i) => `${i + 1}. ${rec}`),
                 '',
                 '## 📁 Analysis Saved',
-                `Path: ${result.analysisPath}`
+                `Path: ${result.analysisPath}`,
+                '',
+                '## 📊 Raw Data (JSON)',
+                '```json',
+                JSON.stringify(result, null, 2),
+                '```'
               ]
                 .filter(line => line !== '')
-                .join('\\n')
+                .join('\n')
             }
           ]
         };
@@ -443,7 +631,12 @@ async function registerTools(server: McpServer) {
                 ...result.recommendations.map((rec, i) => `${i + 1}. ${rec}`),
                 '',
                 '## 📁 Discovery Saved',
-                `Path: ${result.discoveryPath}`
+                `Path: ${result.discoveryPath}`,
+                '',
+                '## 📊 Raw Data (JSON)',
+                '```json',
+                JSON.stringify(result, null, 2),
+                '```'
               ]
                 .filter(line => line !== '')
                 .join('\\n')
@@ -472,10 +665,10 @@ async function registerTools(server: McpServer) {
         'Renders a Handlebars template to build a reusable export script that replays discovered API calls.',
       inputSchema: generateExportToolSchema.shape
     },
-    async ({ analysisId, toolName, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
+    async ({ discoveryId, toolName, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
       try {
         const result = await generateExportTool({
-          analysisId,
+          discoveryId,
           toolName,
           model,
           targetUrl,

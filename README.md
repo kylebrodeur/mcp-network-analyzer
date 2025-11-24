@@ -335,6 +335,10 @@ User: "Analyze capture session_xyz"
 User: "Discover API patterns from analysis_abc"
 → Returns discoveryId: discovery_123
 → Shows REST patterns, pagination, data models
+
+# 4. Generate export tool
+User: "Generate export tool from discovery_123"
+→ Returns generatedPath and usage instructions
 ```
 
 The captured data will include:
@@ -433,9 +437,9 @@ Generate a complete, runnable export script for the discovered API using Claude 
 
 **Parameters:**
 
-- `analysisId` (string, required): ID from discover_api_patterns
+- `discoveryId` (string, required): ID from discover_api_patterns
 - `toolName` (string, required): Name for the generated tool
-- `model` (string, optional): Model to use via HuggingFace + Nebius provider (default: Qwen/Qwen2.5-VL-72B-Instruct)
+- `model` (string, optional): Model to use via HuggingFace + Nebius provider (default: Qwen/Qwen3-Coder-30B-A3B-Instruct)
   - Available models: All Nebius models on HuggingFace Hub
   - Configure Nebius API key at: <https://huggingface.co/settings/inference-providers>
 - `targetUrl` (string, optional): Override target URL (auto-detected if not provided)
@@ -479,7 +483,7 @@ Generate a complete, runnable export script for the discovered API using Claude 
 **Environment Variables:**
 
 - `HF_TOKEN` (required): Your HuggingFace token (get from <https://huggingface.co/settings/tokens>)
-- `NEBIUS_MODEL` (optional): Default model to use (default: Qwen/Qwen2.5-VL-72B-Instruct)
+- `NEBIUS_MODEL` (optional): Default model to use (default: Qwen/Qwen3-Coder-30B-A3B-Instruct)
 
 **Example:**
 
@@ -487,7 +491,7 @@ Generate a complete, runnable export script for the discovered API using Claude 
 {
   "tool": "generate_export_tool",
   "arguments": {
-    "analysisId": "discovery_1763346972243_az00w2jd",
+    "discoveryId": "discovery_1763346972243_az00w2jd",
     "toolName": "exportApiData",
     "language": "typescript",
     "outputFormat": "json"
@@ -501,7 +505,7 @@ Generate a complete, runnable export script for the discovered API using Claude 
 {
   "tool": "generate_export_tool",
   "arguments": {
-    "analysisId": "discovery_1763346972243_az00w2jd",
+    "discoveryId": "discovery_1763346972243_az00w2jd",
     "toolName": "exportApiData",
     "model": "meta-llama/Llama-3.3-70B-Instruct",
     "language": "python",

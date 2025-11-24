@@ -1,10 +1,42 @@
+import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+
+// Load environment variables from .env file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PROJECT_ROOT = join(__dirname, '..');
+
+async function loadEnvFile() {
+  try {
+    const envPath = join(PROJECT_ROOT, '.env');
+    const envContent = await readFile(envPath, 'utf-8');
+    const lines = envContent.split('\n');
+    for (const line of lines) {
+      if (line.includes('=') && !line.trim().startsWith('#')) {
+        const [key, ...valueParts] = line.split('=');
+        const value = valueParts.join('=').trim();
+        if (key.trim() && !process.env[key.trim()]) {
+          process.env[key.trim()] = value;
+        }
+      }
+    }
+  } catch (error) {
+    // .env file not found or not readable - that's ok
+  }
+}
+
+// Load environment variables before anything else
+await loadEnvFile();
 
 import { McpServer, type ToolCallback } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { DatabaseService } from './lib/database.js';
+import { Storage } from './lib/storage.js';
 import { analyzeCapturedData } from './tools/analyze.js';
 import { captureNetworkRequests } from './tools/capture.js';
 import { discoverApiPatterns } from './tools/discover.js';
@@ -70,9 +102,9 @@ const discoverApiPatternsSchema = z.object({
 });
 
 const generateExportToolSchema = z.object({
-  analysisId: z.string().min(1),
+  discoveryId: z.string().min(1),
   toolName: z.string().min(1),
-  model: z.string().min(1).default('Qwen/Qwen2.5-VL-72B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').optional(),
+  model: z.string().min(1).default('Qwen/Qwen3-Coder-30B-A3B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').optional(),
   targetUrl: z.string().url().optional(),
   outputDirectory: z.string().optional(),
   outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),
@@ -275,10 +307,15 @@ const registerPlaceholderTools = () => {
                 ...result.recommendations.map((rec, i) => `${i + 1}. ${rec}`),
                 '',
                 '## 📁 Analysis Saved',
-                `Path: ${result.analysisPath}`
+                `Path: ${result.analysisPath}`,
+                '',
+                '## 📊 Raw Data (JSON)',
+                '```json',
+                JSON.stringify(result, null, 2),
+                '```'
               ]
                 .filter(line => line !== '')
-                .join('\\n')
+                .join('\n')
             }
           ]
         };
@@ -385,10 +422,15 @@ const registerPlaceholderTools = () => {
                 ...result.recommendations.map((rec, i) => `${i + 1}. ${rec}`),
                 '',
                 '## 📁 Discovery Saved',
-                `Path: ${result.discoveryPath}`
+                `Path: ${result.discoveryPath}`,
+                '',
+                '## 📊 Raw Data (JSON)',
+                '```json',
+                JSON.stringify(result, null, 2),
+                '```'
               ]
                 .filter(line => line !== '')
-                .join('\\n')
+                .join('\n')
             }
           ]
         };
@@ -414,10 +456,10 @@ const registerPlaceholderTools = () => {
         'Renders a Handlebars template to build a reusable export script that replays discovered API calls.',
       inputSchema: generateExportToolSchema.shape
     },
-    async ({ analysisId, toolName, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
+    async ({ discoveryId, toolName, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
       try {
         const result = await generateExportTool({
-          analysisId,
+          discoveryId,
           toolName,
           model,
           targetUrl,
@@ -564,6 +606,10 @@ const shutdown = async (signal?: NodeJS.Signals) => {
 };
 
 const main = async () => {
+  // Initialize storage and database
+  await Storage.ensureDirectories();
+  await DatabaseService.getInstance().initialize();
+  
   registerPlaceholderTools();
   await server.connect(transport);
   log('info', 'MCP Network Analyzer server is ready for connections.');

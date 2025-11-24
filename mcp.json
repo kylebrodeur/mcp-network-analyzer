@@ -2,9 +2,11 @@
   "mcpServers": {
     "network-analyzer": {
       "command": "node",
-      "args": ["${workspaceFolder}/dist/index.js"],
+      "args": [
+        "/Users/kylebrodeur/mcp-network-analyzer/dist/index.js"
+      ],
       "env": {
-        "DEBUG": "mcp-network-analyzer:*"
+        "MCP_NETWORK_ANALYZER_DATA": "/Users/kylebrodeur/workspace/analyze-uof.digital"
       }
     }
   }

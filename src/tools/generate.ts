@@ -6,11 +6,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CodeGenerator, type CodeGenerationOptions } from "../lib/code-generator.js";
+import { DatabaseService } from "../lib/database.js";
 import type { APIPattern } from "../lib/pattern-matcher.js";
 import { Storage } from "../lib/storage.js";
 
 export interface GenerateOptions {
-  analysisId: string;
+  discoveryId: string;
   toolName: string;
   targetUrl?: string;
   outputDirectory?: string;
@@ -37,13 +38,23 @@ export interface GenerateResult {
 export async function generateExportTool(
   options: GenerateOptions
 ): Promise<GenerateResult> {
+  const db = DatabaseService.getInstance();
+  let generationId: string | null = null;
+  
   try {
+    // Generate generation ID first
+    generationId = await db.createGeneration(
+      options.discoveryId,
+      options.toolName,
+      options.language || 'typescript'
+    );
+    
     // Load discovery results to get patterns
     const dataDir = Storage.getDataDirectory();
     const discoveryFile = join(
       dataDir,
       "analyses",
-      options.analysisId,
+      options.discoveryId,
       "discovery.json"
     );
 
@@ -130,6 +141,14 @@ export async function generateExportTool(
       options.outputFormat || "json"
     );
 
+    // Update database record with results
+    await db.updateGeneration(generationId, {
+      status: 'complete',
+      filePath: outputPath,
+      linesOfCode,
+      tokensUsed: result.tokensUsed
+    });
+
     return {
       success: true,
       generatedPath: outputPath,
@@ -140,6 +159,11 @@ export async function generateExportTool(
       instructions,
     };
   } catch (error) {
+    // Update database record if we have a generation ID
+    if (generationId) {
+      await db.updateGeneration(generationId, { status: 'failed' });
+    }
+    
     return {
       success: false,
       language: options.language || "typescript",

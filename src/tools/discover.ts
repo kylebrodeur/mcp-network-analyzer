@@ -5,6 +5,7 @@
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { DatabaseService } from "../lib/database.js";
 import {
     APIPattern,
     PatternDiscoveryResult,
@@ -62,7 +63,13 @@ export interface DiscoverResult {
 export async function discoverApiPatterns(
   options: DiscoverOptions
 ): Promise<DiscoverResult> {
+  const db = DatabaseService.getInstance();
+  let discoveryId: string | null = null;
+  
   try {
+    // Generate discovery ID first
+    discoveryId = await db.createDiscovery(options.analysisId);
+    
     // Load analysis results to get the capture ID
     const dataDir = Storage.getDataDirectory();
     const analysisFile = join(
@@ -94,9 +101,6 @@ export async function discoverApiPatterns(
       (p) => p.confidence >= minConfidence
     );
 
-    // Generate discovery ID
-    const discoveryId = `discovery_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-
     // Save discovery results
     const discoveryPath = join(dataDir, "analyses", discoveryId);
     await mkdir(discoveryPath, { recursive: true });
@@ -117,6 +121,15 @@ export async function discoverApiPatterns(
       ),
       "utf-8"
     );
+    
+    // Update database record with results
+    await db.updateDiscovery(discoveryId, {
+      status: 'complete',
+      filePath: discoveryFile,
+      patternsFound: filteredPatterns.length,
+      paginationDetected: discovery.pagination.type !== 'none',
+      rateLimitingDetected: discovery.rateLimiting?.detected || false
+    });
 
     // Generate recommendations
     const recommendations = generateDiscoveryRecommendations(discovery);
@@ -138,9 +151,14 @@ export async function discoverApiPatterns(
       recommendations,
     };
   } catch (error) {
+    // Update database record if we have a discovery ID
+    if (discoveryId) {
+      await db.updateDiscovery(discoveryId, { status: 'failed' });
+    }
+    
     return {
       success: false,
-      discoveryId: "",
+      discoveryId: discoveryId || "",
       patterns: [],
       pagination: {
         type: "none",

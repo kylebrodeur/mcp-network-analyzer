@@ -6,6 +6,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { AnalysisSummary, NetworkAnalyzer } from "../lib/analyzer.js";
+import { DatabaseService } from "../lib/database.js";
 import { Storage } from "../lib/storage.js";
 import type { CaptureSession } from "../lib/types.js";
 
@@ -51,7 +52,13 @@ export interface AnalyzeResult {
 export async function analyzeCapturedData(
   options: AnalyzeOptions
 ): Promise<AnalyzeResult> {
+  const db = DatabaseService.getInstance();
+  let analysisId: string | null = null;
+  
   try {
+    // Generate analysis ID first
+    analysisId = await db.createAnalysis(options.captureId);
+    
     // Load the capture session
     const sessionPath = Storage.getSessionPath(options.captureId);
     const sessionFile = join(sessionPath, "session.json");
@@ -63,9 +70,6 @@ export async function analyzeCapturedData(
     const analyzer = new NetworkAnalyzer();
     const analysis: AnalysisSummary = await analyzer.analyze(session);
 
-    // Generate analysis ID
-    const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-
     // Save analysis results
     const dataDir = Storage.getDataDirectory();
     const analysisPath = join(dataDir, "analyses", analysisId);
@@ -73,6 +77,17 @@ export async function analyzeCapturedData(
 
     const analysisFile = join(analysisPath, "analysis.json");
     await writeFile(analysisFile, JSON.stringify(analysis, null, 2), "utf-8");
+
+    // Update database record with results
+    await db.updateAnalysis(analysisId, {
+      status: 'complete',
+      filePath: analysisFile,
+      totalRequests: analysis.summary.totalRequests,
+      totalResponses: analysis.summary.totalResponses,
+      apiEndpoints: analysis.summary.apiEndpoints,
+      staticAssets: analysis.summary.staticAssets,
+      errorCount: analysis.summary.errorCount
+    });
 
     // Generate recommendations
     const recommendations = generateRecommendations(analysis);
@@ -100,9 +115,14 @@ export async function analyzeCapturedData(
       recommendations,
     };
   } catch (error) {
+    // Update database record if we have an analysis ID
+    if (analysisId) {
+      await db.updateAnalysis(analysisId, { status: 'failed' });
+    }
+    
     return {
       success: false,
-      analysisId: "",
+      analysisId: analysisId || "",
       summary: {
         totalRequests: 0,
         totalResponses: 0,
