@@ -41,7 +41,7 @@ import { analyzeCapturedData } from './tools/analyze.js';
 import { captureNetworkRequests } from './tools/capture.js';
 import { discoverApiPatterns } from './tools/discover.js';
 import { generateExportTool } from './tools/generate.js';
-import { handleGenerateSessionId, handleGetNextIds, handleGetWorkflowChain, handleListAllIds, handleValidateId } from './tools/id-management.js';
+import { handleGenerateSessionId, handleGetNextIds, handleGetNextSessionIds, handleGetWorkflowChain, handleListAllIds, handleListSessionIds, handleValidateId } from './tools/id-management.js';
 import { handleSearchExportedData } from './tools/search.js';
 
 const require = createRequire(import.meta.url);
@@ -124,12 +124,18 @@ const searchExportedDataSchema = z.object({
 });
 
 const getWorkflowChainSchema = z.object({
-  id: z.string().min(1)
+  id: z.string().min(1),
+  sessionId: z.string().optional()
 });
 
 const validateIdSchema = z.object({
   id: z.string().min(1),
-  type: z.enum(['capture', 'analysis', 'discovery', 'generation'])
+  type: z.enum(['capture', 'analysis', 'discovery', 'generation']),
+  sessionId: z.string().optional()
+});
+
+const sessionIdSchema = z.object({
+  sessionId: z.string().min(1)
 });
 
 const registerPlaceholderTools = () => {
@@ -556,12 +562,42 @@ const registerPlaceholderTools = () => {
     }
   );
 
+  // New secure session-based tools
+  server.registerTool(
+    'list_session_ids',
+    {
+      title: 'List Session IDs',
+      description:
+        'Lists all capture, analysis, discovery, and generation IDs for a specific session. This is the secure way to view IDs without exposing data from other sessions.',
+      inputSchema: sessionIdSchema.shape
+    },
+    async (params) => {
+      return handleListSessionIds(params);
+    }
+  );
+
+  server.registerTool(
+    'get_next_session_ids',
+    {
+      title: 'Get Next Available Session IDs',
+      description:
+        'Returns IDs that are ready for the next phase of processing within a specific session (analysis, discovery, or generation).',
+      inputSchema: sessionIdSchema.shape
+    },
+    async (params) => {
+      return handleGetNextSessionIds(params);
+    }
+  );
+
+  // Deprecated tools (kept for backward compatibility but with security warnings)
+
+  // Deprecated tools (kept for backward compatibility but with security warnings)
   server.registerTool(
     'list_all_ids',
     {
-      title: 'List All Available IDs',
+      title: '[DEPRECATED] List All Available IDs',
       description:
-        'Lists all capture, analysis, discovery, and generation IDs with their status and details.',
+        '[SECURITY WARNING] This tool exposes IDs across all sessions. Use list_session_ids instead for security.',
       inputSchema: {}
     },
     async () => {
@@ -572,9 +608,9 @@ const registerPlaceholderTools = () => {
   server.registerTool(
     'get_next_available_ids',
     {
-      title: 'Get Next Available IDs',
+      title: '[DEPRECATED] Get Next Available IDs',
       description:
-        'Returns IDs that are ready for the next phase of processing (analysis, discovery, or generation).',
+        '[SECURITY WARNING] This tool exposes IDs across all sessions. Use get_next_session_ids instead for security.',
       inputSchema: {}
     },
     async () => {

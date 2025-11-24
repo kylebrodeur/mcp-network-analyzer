@@ -302,6 +302,14 @@ export class IdManager {
   }
 
   /**
+   * Validate that an ID belongs to the specified session
+   */
+  public async validateSessionAccess(id: string, sessionId: string): Promise<boolean> {
+    await this.db.initialize();
+    return this.db.validateSessionAccess(id, sessionId);
+  }
+
+  /**
    * Generate a new session ID for capture
    */
   public generateCaptureSessionId(): string {
@@ -309,58 +317,59 @@ export class IdManager {
   }
 
   /**
-   * Validate if an ID exists and is in the correct state
+   * Validate if an ID exists and is in the correct state, with optional session validation
    */
-  public async validateId(id: string, expectedType: 'capture' | 'analysis' | 'discovery' | 'generation'): Promise<{
+  public async validateId(
+    id: string, 
+    expectedType: 'capture' | 'analysis' | 'discovery' | 'generation',
+    sessionId?: string
+  ): Promise<{
     valid: boolean;
     exists: boolean;
     correctType: boolean;
+    sessionValid?: boolean;
     status?: string;
     error?: string;
   }> {
     await this.db.initialize();
 
     try {
+      let exists = false;
+      let correctType = false;
+      let status: string | undefined;
+
       switch (expectedType) {
         case 'capture': {
           const capture = this.db.getCapture(id);
-          return {
-            valid: !!capture,
-            exists: !!capture,
-            correctType: !!capture,
-            status: capture?.status
-          };
+          exists = !!capture;
+          correctType = !!capture;
+          status = capture?.status;
+          break;
         }
         
         case 'analysis': {
           const analysis = this.db.getAnalysis(id);
-          return {
-            valid: !!analysis,
-            exists: !!analysis,
-            correctType: !!analysis,
-            status: analysis?.status
-          };
+          exists = !!analysis;
+          correctType = !!analysis;
+          status = analysis?.status;
+          break;
         }
         
         case 'discovery': {
           const discovery = this.db.getDiscovery(id);
-          return {
-            valid: !!discovery,
-            exists: !!discovery,
-            correctType: !!discovery,
-            status: discovery?.status
-          };
+          exists = !!discovery;
+          correctType = !!discovery;
+          status = discovery?.status;
+          break;
         }
         
         case 'generation': {
           const generations = this.db.getData()?.generations || {};
           const generation = generations[id];
-          return {
-            valid: !!generation,
-            exists: !!generation,
-            correctType: !!generation,
-            status: generation?.status
-          };
+          exists = !!generation;
+          correctType = !!generation;
+          status = generation?.status;
+          break;
         }
         
         default:
@@ -371,6 +380,30 @@ export class IdManager {
             error: `Unknown ID type: ${expectedType}`
           };
       }
+
+      // Validate session access if sessionId is provided
+      let sessionValid: boolean | undefined;
+      if (sessionId && exists) {
+        sessionValid = this.db.validateSessionAccess(id, sessionId);
+        if (!sessionValid) {
+          return {
+            valid: false,
+            exists,
+            correctType,
+            sessionValid,
+            status,
+            error: `ID ${id} does not belong to session ${sessionId}`
+          };
+        }
+      }
+
+      return {
+        valid: exists && correctType && (sessionValid !== false),
+        exists,
+        correctType,
+        sessionValid,
+        status
+      };
     } catch (error) {
       return {
         valid: false,
@@ -493,9 +526,28 @@ export class IdManager {
 }
 
 /**
- * List all available IDs tool handler
+ * List available IDs for a specific session tool handler
+ */
+export async function handleListSessionIds(input: { sessionId: string }) {
+  const idManager = new IdManager();
+  const result = await idManager.listIdsForSession(input.sessionId);
+
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: formatIdList(result, input.sessionId)
+      }
+    ]
+  };
+}
+
+/**
+ * List all available IDs tool handler (DEPRECATED)
+ * @deprecated Use handleListSessionIds instead for security
  */
 export async function handleListAllIds() {
+  console.warn('SECURITY WARNING: listAllIds is deprecated and exposes IDs across all sessions');
   const idManager = new IdManager();
   const result = await idManager.listAllIds();
 
@@ -503,16 +555,37 @@ export async function handleListAllIds() {
     content: [
       {
         type: 'text' as const,
-        text: formatIdList(result)
+        text: `⚠️  **SECURITY WARNING**: This tool is deprecated and shows IDs from all sessions.\n\n` +
+             `Please use 'list_session_ids' instead with a specific sessionId for security.\n\n` +
+             formatIdList(result)
       }
     ]
   };
 }
 
 /**
- * Get next available IDs tool handler
+ * Get next available IDs for a specific session tool handler
+ */
+export async function handleGetNextSessionIds(input: { sessionId: string }) {
+  const idManager = new IdManager();
+  const result = await idManager.getNextAvailableIdsForSession(input.sessionId);
+
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: formatNextIds(result, input.sessionId)
+      }
+    ]
+  };
+}
+
+/**
+ * Get next available IDs tool handler (DEPRECATED)
+ * @deprecated Use handleGetNextSessionIds instead for security
  */
 export async function handleGetNextIds() {
+  console.warn('SECURITY WARNING: getNextIds is deprecated and exposes IDs across all sessions');
   const idManager = new IdManager();
   const result = await idManager.getNextAvailableIds();
 
@@ -520,7 +593,9 @@ export async function handleGetNextIds() {
     content: [
       {
         type: 'text' as const,
-        text: formatNextIds(result)
+        text: `⚠️  **SECURITY WARNING**: This tool is deprecated and shows IDs from all sessions.\n\n` +
+             `Please use 'get_next_session_ids' instead with a specific sessionId for security.\n\n` +
+             formatNextIds(result)
       }
     ]
   };
@@ -544,19 +619,28 @@ export async function handleGenerateSessionId() {
 }
 
 /**
- * Validate ID tool handler
+ * Validate ID tool handler with optional session validation
  */
-export async function handleValidateId(input: { id: string; type: 'capture' | 'analysis' | 'discovery' | 'generation' }) {
+export async function handleValidateId(input: { 
+  id: string; 
+  type: 'capture' | 'analysis' | 'discovery' | 'generation';
+  sessionId?: string;
+}) {
   const idManager = new IdManager();
-  const result = await idManager.validateId(input.id, input.type);
+  const result = await idManager.validateId(input.id, input.type, input.sessionId);
 
   let statusMessage = '';
   if (result.valid) {
     statusMessage = `✅ Valid ${input.type} ID: \`${input.id}\` (Status: ${result.status})`;
+    if (input.sessionId && result.sessionValid) {
+      statusMessage += ` - Session validated`;
+    }
   } else if (!result.exists) {
     statusMessage = `❌ ID \`${input.id}\` does not exist as a ${input.type}`;
   } else if (!result.correctType) {
     statusMessage = `❌ ID \`${input.id}\` exists but is not a ${input.type}`;
+  } else if (result.sessionValid === false) {
+    statusMessage = `❌ ID \`${input.id}\` does not belong to session \`${input.sessionId}\``;
   } else {
     statusMessage = `❌ ID validation failed: ${result.error}`;
   }
@@ -570,8 +654,25 @@ export async function handleValidateId(input: { id: string; type: 'capture' | 'a
     ]
   };
 }
-export async function handleGetWorkflowChain(input: { id: string }) {
+
+export async function handleGetWorkflowChain(input: { id: string; sessionId?: string }) {
   const idManager = new IdManager();
+  
+  // Validate session access if sessionId is provided
+  if (input.sessionId) {
+    const sessionValid = await idManager.validateSessionAccess(input.id, input.sessionId);
+    if (!sessionValid) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `❌ ID \`${input.id}\` does not belong to session \`${input.sessionId}\``
+          }
+        ]
+      };
+    }
+  }
+  
   const result = await idManager.getWorkflowChain(input.id);
 
   return {
@@ -587,8 +688,10 @@ export async function handleGetWorkflowChain(input: { id: string }) {
 /**
  * Format ID list for display
  */
-function formatIdList(result: IdListResult): string {
-  let output = `# All Available IDs\n\n`;
+function formatIdList(result: IdListResult, sessionId?: string): string {
+  let output = sessionId 
+    ? `# Available IDs for Session: ${sessionId}\n\n`
+    : `# All Available IDs\n\n`;
 
   // Summary
   output += `## Summary\n\n`;
@@ -666,8 +769,10 @@ function formatNextIds(result: {
   analysesReadyForDiscovery: string[];
   discoveriesReadyForGeneration: string[];
   suggestedNextAction?: string;
-}): string {
-  let output = `# Next Available IDs\n\n`;
+}, sessionId?: string): string {
+  let output = sessionId 
+    ? `# Next Available IDs for Session: ${sessionId}\n\n`
+    : `# Next Available IDs\n\n`;
 
   if (result.suggestedNextAction) {
     output += `## 🎯 Suggested Next Action\n\n`;
