@@ -12,7 +12,7 @@ import type { CapturedRequest, CapturedResponse } from '../lib/types.js';
 interface SearchFilters {
   query: string;
   captureId?: string;
-  statusCode?: number | number[];
+  statusCode?: number | number[] | null;
   limit?: number;
   includeResponses?: boolean;
 }
@@ -371,7 +371,8 @@ export class SearchService {
   /**
    * Normalize status codes to array
    */
-  private normalizeStatusCodes(statusCode?: number | number[]): number[] | undefined {
+  private normalizeStatusCodes(statusCode?: number | number[] | null): number[] | undefined {
+    if (statusCode === null || statusCode === undefined) return undefined;
     if (typeof statusCode === 'number') return [statusCode];
     return statusCode;
   }

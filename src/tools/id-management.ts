@@ -60,7 +60,82 @@ export class IdManager {
   }
 
   /**
-   * List all available IDs across all phases
+   * List all available IDs across all phases for a specific session
+   */
+  public async listIdsForSession(sessionId: string): Promise<IdListResult> {
+    await this.db.initialize();
+
+    const captures = this.db.listCapturesBySession(sessionId);
+    const analyses = this.db.listAnalysesBySession(sessionId);
+    const discoveries = this.db.listDiscoveriesBySession(sessionId);
+    const generations = this.db.listGenerationsBySession(sessionId);
+
+    // Calculate availability for next phases within this session
+    const capturesWithoutAnalysis = captures.filter(capture => 
+      !analyses.some(analysis => analysis.captureId === capture.id)
+    );
+
+    const analysesWithoutDiscovery = analyses.filter(analysis =>
+      analysis.status === 'complete' && 
+      !discoveries.some(discovery => discovery.analysisId === analysis.id)
+    );
+
+    const discoveriesWithoutGeneration = discoveries.filter(discovery =>
+      discovery.status === 'complete' &&
+      !generations.some(generation => generation.discoveryId === discovery.id)
+    );
+
+    return {
+      captures: captures.map(c => ({
+        id: c.id,
+        sessionId: c.sessionId,
+        targetUrl: c.targetUrl,
+        status: c.status,
+        requestCount: c.requestCount,
+        responseCount: c.responseCount,
+        timestamp: c.timestamp
+      })),
+      analyses: analyses.map(a => ({
+        id: a.id,
+        captureId: a.captureId,
+        status: a.status,
+        totalRequests: a.totalRequests,
+        totalResponses: a.totalResponses,
+        apiEndpoints: a.apiEndpoints,
+        timestamp: a.timestamp
+      })),
+      discoveries: discoveries.map(d => ({
+        id: d.id,
+        analysisId: d.analysisId,
+        status: d.status,
+        patternsFound: d.patternsFound,
+        paginationDetected: d.paginationDetected,
+        rateLimitingDetected: d.rateLimitingDetected,
+        timestamp: d.timestamp
+      })),
+      generations: generations.map(g => ({
+        id: g.id,
+        discoveryId: g.discoveryId,
+        toolName: g.toolName,
+        language: g.language,
+        status: g.status,
+        timestamp: g.timestamp
+      })),
+      summary: {
+        totalCaptures: captures.length,
+        totalAnalyses: analyses.length,
+        totalDiscoveries: discoveries.length,
+        totalGenerations: generations.length,
+        availableForAnalysis: capturesWithoutAnalysis.length,
+        availableForDiscovery: analysesWithoutDiscovery.length,
+        availableForGeneration: discoveriesWithoutGeneration.length
+      }
+    };
+  }
+
+  /**
+   * List all available IDs across all phases (DEPRECATED - use listIdsForSession instead)
+   * @deprecated This method exposes IDs across all sessions and should not be used in multi-user environments
    */
   public async listAllIds(): Promise<IdListResult> {
     await this.db.initialize();
@@ -134,7 +209,54 @@ export class IdManager {
   }
 
   /**
-   * Get next available IDs for workflow progression
+   * Get next available IDs for workflow progression within a specific session
+   */
+  public async getNextAvailableIdsForSession(sessionId: string): Promise<{
+    capturesReadyForAnalysis: string[];
+    analysesReadyForDiscovery: string[];
+    discoveriesReadyForGeneration: string[];
+    suggestedNextAction?: string;
+  }> {
+    const result = await this.listIdsForSession(sessionId);
+
+    const capturesReadyForAnalysis = result.captures
+      .filter(c => c.status === 'complete')
+      .filter(c => !result.analyses.some(a => a.captureId === c.id))
+      .map(c => c.id);
+
+    const analysesReadyForDiscovery = result.analyses
+      .filter(a => a.status === 'complete')
+      .filter(a => !result.discoveries.some(d => d.analysisId === a.id))
+      .map(a => a.id);
+
+    const discoveriesReadyForGeneration = result.discoveries
+      .filter(d => d.status === 'complete')
+      .filter(d => !result.generations.some(g => g.discoveryId === d.id))
+      .map(d => d.id);
+
+    let suggestedNextAction: string | undefined;
+    
+    if (capturesReadyForAnalysis.length > 0) {
+      suggestedNextAction = `Run analyze_captured_data with captureId: ${capturesReadyForAnalysis[0]}`;
+    } else if (analysesReadyForDiscovery.length > 0) {
+      suggestedNextAction = `Run discover_api_patterns with analysisId: ${analysesReadyForDiscovery[0]}`;
+    } else if (discoveriesReadyForGeneration.length > 0) {
+      suggestedNextAction = `Run generate_export_tool with discoveryId: ${discoveriesReadyForGeneration[0]}`;
+    } else if (result.summary.totalCaptures === 0) {
+      suggestedNextAction = `Start by running capture_network_requests with sessionId: ${sessionId}`;
+    }
+
+    return {
+      capturesReadyForAnalysis,
+      analysesReadyForDiscovery,
+      discoveriesReadyForGeneration,
+      suggestedNextAction
+    };
+  }
+
+  /**
+   * Get next available IDs for workflow progression (DEPRECATED - use getNextAvailableIdsForSession instead)
+   * @deprecated This method exposes IDs across all sessions and should not be used in multi-user environments
    */
   public async getNextAvailableIds(): Promise<{
     capturesReadyForAnalysis: string[];

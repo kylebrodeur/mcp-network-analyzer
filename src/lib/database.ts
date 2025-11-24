@@ -488,4 +488,121 @@ export class DatabaseService {
   public getData(): DatabaseData | null {
     return this.data;
   }
+
+  /**
+   * Get the session ID for any ID by tracing through the workflow chain
+   */
+  public getSessionForId(id: string): string | null {
+    if (!this.data) throw new Error('Database not initialized');
+
+    // Check if it's a capture ID
+    const capture = this.data.captures[id];
+    if (capture) {
+      return capture.sessionId;
+    }
+
+    // Check if it's an analysis ID
+    const analysis = this.data.analyses[id];
+    if (analysis) {
+      const parentCapture = this.data.captures[analysis.captureId];
+      return parentCapture?.sessionId || null;
+    }
+
+    // Check if it's a discovery ID
+    const discovery = this.data.discoveries[id];
+    if (discovery) {
+      const parentAnalysis = this.data.analyses[discovery.analysisId];
+      if (parentAnalysis) {
+        const parentCapture = this.data.captures[parentAnalysis.captureId];
+        return parentCapture?.sessionId || null;
+      }
+    }
+
+    // Check if it's a generation ID
+    const generation = this.data.generations[id];
+    if (generation) {
+      const parentDiscovery = this.data.discoveries[generation.discoveryId];
+      if (parentDiscovery) {
+        const parentAnalysis = this.data.analyses[parentDiscovery.analysisId];
+        if (parentAnalysis) {
+          const parentCapture = this.data.captures[parentAnalysis.captureId];
+          return parentCapture?.sessionId || null;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * List captures filtered by session ID
+   */
+  public listCapturesBySession(sessionId: string): CaptureRecord[] {
+    if (!this.data) throw new Error('Database not initialized');
+    
+    return Object.values(this.data.captures)
+      .filter(capture => capture.sessionId === sessionId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
+   * List analyses filtered by session ID
+   */
+  public listAnalysesBySession(sessionId: string): AnalysisRecord[] {
+    if (!this.data) throw new Error('Database not initialized');
+    
+    return Object.values(this.data.analyses)
+      .filter(analysis => {
+        const capture = this.data!.captures[analysis.captureId];
+        return capture?.sessionId === sessionId;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
+   * List discoveries filtered by session ID
+   */
+  public listDiscoveriesBySession(sessionId: string): DiscoveryRecord[] {
+    if (!this.data) throw new Error('Database not initialized');
+    
+    return Object.values(this.data.discoveries)
+      .filter(discovery => {
+        const analysis = this.data!.analyses[discovery.analysisId];
+        if (analysis) {
+          const capture = this.data!.captures[analysis.captureId];
+          return capture?.sessionId === sessionId;
+        }
+        return false;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
+   * List generations filtered by session ID
+   */
+  public listGenerationsBySession(sessionId: string): GenerationRecord[] {
+    if (!this.data) throw new Error('Database not initialized');
+    
+    return Object.values(this.data.generations)
+      .filter(generation => {
+        const discovery = this.data!.discoveries[generation.discoveryId];
+        if (discovery) {
+          const analysis = this.data!.analyses[discovery.analysisId];
+          if (analysis) {
+            const capture = this.data!.captures[analysis.captureId];
+            return capture?.sessionId === sessionId;
+          }
+        }
+        return false;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
+   * Validate that an ID belongs to the specified session
+   */
+  public validateSessionAccess(id: string, sessionId: string): boolean {
+    const idSession = this.getSessionForId(id);
+    return idSession === sessionId;
+  }
 }

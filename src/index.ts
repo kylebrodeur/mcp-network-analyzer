@@ -118,7 +118,7 @@ const generateExportToolSchema = z.object({
 const searchExportedDataSchema = z.object({
   query: z.string().min(1),
   captureId: z.string().optional(),
-  statusCode: z.union([z.number().int(), z.array(z.number().int())]).optional(),
+  statusCode: z.union([z.number().int(), z.array(z.number().int())]).nullable().optional(),
   limit: z.number().int().positive().max(1000).default(100).optional(),
   includeResponses: z.boolean().optional()
 });
