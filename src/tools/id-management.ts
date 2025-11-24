@@ -624,15 +624,16 @@ export async function handleGenerateSessionId() {
 export async function handleValidateId(input: { 
   id: string; 
   type: 'capture' | 'analysis' | 'discovery' | 'generation';
-  sessionId?: string;
+  sessionId?: string | null;
 }) {
+  const sessionId = input.sessionId ?? undefined;
   const idManager = new IdManager();
-  const result = await idManager.validateId(input.id, input.type, input.sessionId);
+  const result = await idManager.validateId(input.id, input.type, sessionId);
 
   let statusMessage = '';
   if (result.valid) {
     statusMessage = `✅ Valid ${input.type} ID: \`${input.id}\` (Status: ${result.status})`;
-    if (input.sessionId && result.sessionValid) {
+    if (sessionId && result.sessionValid) {
       statusMessage += ` - Session validated`;
     }
   } else if (!result.exists) {
@@ -640,7 +641,7 @@ export async function handleValidateId(input: {
   } else if (!result.correctType) {
     statusMessage = `❌ ID \`${input.id}\` exists but is not a ${input.type}`;
   } else if (result.sessionValid === false) {
-    statusMessage = `❌ ID \`${input.id}\` does not belong to session \`${input.sessionId}\``;
+    statusMessage = `❌ ID \`${input.id}\` does not belong to session \`${sessionId}\``;
   } else {
     statusMessage = `❌ ID validation failed: ${result.error}`;
   }
@@ -655,18 +656,19 @@ export async function handleValidateId(input: {
   };
 }
 
-export async function handleGetWorkflowChain(input: { id: string; sessionId?: string }) {
+export async function handleGetWorkflowChain(input: { id: string; sessionId?: string | null }) {
+  const sessionId = input.sessionId ?? undefined;
   const idManager = new IdManager();
   
   // Validate session access if sessionId is provided
-  if (input.sessionId) {
-    const sessionValid = await idManager.validateSessionAccess(input.id, input.sessionId);
+  if (sessionId) {
+    const sessionValid = await idManager.validateSessionAccess(input.id, sessionId);
     if (!sessionValid) {
       return {
         content: [
           {
             type: 'text' as const,
-            text: `❌ ID \`${input.id}\` does not belong to session \`${input.sessionId}\``
+            text: `❌ ID \`${input.id}\` does not belong to session \`${sessionId}\``
           }
         ]
       };

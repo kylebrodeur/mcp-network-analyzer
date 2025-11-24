@@ -86,16 +86,16 @@ const server = new McpServer(
 const captureNetworkRequestsSchema = z.object({
   url: z.string().url(),
   waitForNetworkIdleMs: z.number().int().positive().max(120000).optional(),
-  sessionId: z.string().min(1).optional(),
-  includeResourceTypes: z.array(z.string()).optional(),
-  excludeResourceTypes: z.array(z.string()).optional(),
+  sessionId: z.string().min(1).nullable().optional(),
+  includeResourceTypes: z.array(z.string()).nullable().optional(),
+  excludeResourceTypes: z.array(z.string()).nullable().optional(),
   ignoreStaticAssets: z.boolean().optional()
 });
 
 const analyzeCapturedDataSchema = z.object({
   captureId: z.string().min(1),
   includeStaticAssets: z.boolean().default(false).optional(),
-  outputPath: z.string().optional()
+  outputPath: z.string().nullable().optional()
 });
 
 const discoverApiPatternsSchema = z.object({
@@ -107,10 +107,10 @@ const discoverApiPatternsSchema = z.object({
 const generateExportToolSchema = z.object({
   discoveryId: z.string().min(1),
   toolName: z.string().min(1),
-  description: z.string().min(1).describe('Description of what the tool does and what data it extracts. This helps the LLM generate better, more contextual code.').optional(),
-  model: z.string().min(1).default('Qwen/Qwen3-Coder-30B-A3B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').optional(),
-  targetUrl: z.string().url().optional(),
-  outputDirectory: z.string().optional(),
+  description: z.string().min(1).describe('Description of what the tool does and what data it extracts. This helps the LLM generate better, more contextual code.').nullable().optional(),
+  model: z.string().min(1).default('Qwen/Qwen3-Coder-30B-A3B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').nullable().optional(),
+  targetUrl: z.string().url().nullable().optional(),
+  outputDirectory: z.string().nullable().optional(),
   outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),
   incremental: z.boolean().optional(),
   language: z.enum(['typescript', 'python', 'javascript', 'go']).default('typescript').optional()
@@ -118,7 +118,7 @@ const generateExportToolSchema = z.object({
 
 const searchExportedDataSchema = z.object({
   query: z.string().min(1),
-  captureId: z.string().optional(),
+  captureId: z.string().nullable().optional(),
   statusCode: z.union([z.number().int(), z.array(z.number().int())]).nullable().optional(),
   limit: z.number().int().positive().max(1000).default(100).optional(),
   includeResponses: z.boolean().optional()
@@ -126,13 +126,13 @@ const searchExportedDataSchema = z.object({
 
 const getWorkflowChainSchema = z.object({
   id: z.string().min(1),
-  sessionId: z.string().optional()
+  sessionId: z.string().nullable().optional()
 });
 
 const validateIdSchema = z.object({
   id: z.string().min(1),
   type: z.enum(['capture', 'analysis', 'discovery', 'generation']),
-  sessionId: z.string().optional()
+  sessionId: z.string().nullable().optional()
 });
 
 const sessionIdSchema = z.object({
@@ -140,7 +140,7 @@ const sessionIdSchema = z.object({
 });
 
 const getHelpSchema = z.object({
-  topic: z.enum(['overview', 'workflow', 'tools', 'examples', 'security', 'troubleshooting']).optional()
+  topic: z.enum(['overview', 'workflow', 'tools', 'examples', 'security', 'troubleshooting']).nullable().optional()
 });
 
 const registerPlaceholderTools = () => {
@@ -157,9 +157,9 @@ const registerPlaceholderTools = () => {
         const result = await captureNetworkRequests({
           url,
           waitForNetworkIdleMs,
-          sessionId,
-          includeResourceTypes,
-          excludeResourceTypes,
+          sessionId: sessionId ?? undefined,
+          includeResourceTypes: includeResourceTypes ?? undefined,
+          excludeResourceTypes: excludeResourceTypes ?? undefined,
           ignoreStaticAssets
         });
 
@@ -258,7 +258,7 @@ const registerPlaceholderTools = () => {
         const result = await analyzeCapturedData({
           captureId,
           includeStaticAssets,
-          outputPath
+          outputPath: outputPath ?? undefined
         });
 
         if (!result.success) {
@@ -484,10 +484,10 @@ const registerPlaceholderTools = () => {
         const result = await generateExportTool({
           discoveryId,
           toolName,
-          description,
-          model,
-          targetUrl,
-          outputDirectory,
+          description: description ?? undefined,
+          model: model ?? undefined,
+          targetUrl: targetUrl ?? undefined,
+          outputDirectory: outputDirectory ?? undefined,
           outputFormat,
           incremental,
           language
@@ -563,7 +563,10 @@ const registerPlaceholderTools = () => {
       inputSchema: searchExportedDataSchema.shape
     },
     async (params) => {
-      return handleSearchExportedData(params);
+      return handleSearchExportedData({
+        ...params,
+        captureId: params.captureId ?? undefined
+      });
     }
   );
 
@@ -576,7 +579,7 @@ const registerPlaceholderTools = () => {
         'Get comprehensive help on using the MCP Network Analyzer. Specify a topic for detailed guidance.',
       inputSchema: getHelpSchema.shape
     },
-    async (params: { topic?: string }) => {
+    async (params: { topic?: string | null }) => {
       return handleGetHelp(params);
     }
   );

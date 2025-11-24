@@ -770,9 +770,10 @@ ${currentPhase === "Ready to Start" ? `
 /**
  * Get help tool handler
  */
-export async function handleGetHelp(input: { topic?: string }) {
+export async function handleGetHelp(input: { topic?: string | null }) {
   const helpSystem = new HelpSystem();
-  const result = await helpSystem.getHelp(input.topic);
+  const topic = input.topic ?? undefined;
+  const result = await helpSystem.getHelp(topic);
 
   if (Array.isArray(result)) {
     // Format workflow examples

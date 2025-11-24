@@ -59,8 +59,14 @@ export async function analyzeCapturedData(
     // Generate analysis ID first
     analysisId = await db.createAnalysis(options.captureId);
     
-    // Load the capture session
-    const sessionPath = Storage.getSessionPath(options.captureId);
+    // Get capture record to find the sessionId
+    const captureRecord = db.getCapture(options.captureId);
+    if (!captureRecord) {
+      throw new Error(`Capture ID ${options.captureId} not found`);
+    }
+    
+    // Load the capture session using sessionId (not captureId)
+    const sessionPath = Storage.getSessionPath(captureRecord.sessionId);
     const sessionFile = join(sessionPath, "session.json");
 
     const sessionData = await readFile(sessionFile, "utf-8");
