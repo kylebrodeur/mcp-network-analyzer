@@ -43,6 +43,7 @@ import { discoverApiPatterns } from './tools/discover.js';
 import { generateExportTool } from './tools/generate.js';
 import { handleGenerateSessionId, handleGetNextIds, handleGetNextSessionIds, handleGetWorkflowChain, handleListAllIds, handleListSessionIds, handleValidateId } from './tools/id-management.js';
 import { handleSearchExportedData } from './tools/search.js';
+import { handleGetHelp, handleGetContextualHelp, handleGetQuickStart } from './tools/help.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
@@ -138,13 +139,17 @@ const sessionIdSchema = z.object({
   sessionId: z.string().min(1)
 });
 
+const getHelpSchema = z.object({
+  topic: z.enum(['overview', 'workflow', 'tools', 'examples', 'security', 'troubleshooting']).optional()
+});
+
 const registerPlaceholderTools = () => {
   server.registerTool(
     'capture_network_requests',
     {
       title: 'Capture Network Requests',
       description:
-        'Launches a Playwright/Puppeteer session, persists auth if requested, and records HTTP traffic into data/captures/.',
+        'Launches a Playwright/Puppeteer session, persists auth if requested, and records HTTP traffic into data/captures/. A unique sessionId is automatically generated if not provided.',
       inputSchema: captureNetworkRequestsSchema.shape
     },
     async ({ url, waitForNetworkIdleMs, sessionId, includeResourceTypes, excludeResourceTypes, ignoreStaticAssets }) => {
@@ -562,13 +567,53 @@ const registerPlaceholderTools = () => {
     }
   );
 
-  // New secure session-based tools
+  // Help and Documentation Tools
+  server.registerTool(
+    'get_help',
+    {
+      title: 'Get Help and Documentation',
+      description:
+        'Get comprehensive help on using the MCP Network Analyzer. Specify a topic for detailed guidance.',
+      inputSchema: getHelpSchema.shape
+    },
+    async (params: { topic?: string }) => {
+      return handleGetHelp(params);
+    }
+  );
+
+  server.registerTool(
+    'get_contextual_help',
+    {
+      title: 'Get Contextual Help',
+      description:
+        'Get help and next step suggestions based on your current session state.',
+      inputSchema: sessionIdSchema.shape
+    },
+    async (params) => {
+      return handleGetContextualHelp(params);
+    }
+  );
+
+  server.registerTool(
+    'get_quick_start',
+    {
+      title: 'Quick Start Guide',
+      description:
+        'Get a quick start guide to begin using the MCP Network Analyzer in 5 minutes.',
+      inputSchema: {}
+    },
+    async () => {
+      return handleGetQuickStart();
+    }
+  );
+
+  // Session-aware ID management tools (secure)
   server.registerTool(
     'list_session_ids',
     {
       title: 'List Session IDs',
       description:
-        'Lists all capture, analysis, discovery, and generation IDs for a specific session. This is the secure way to view IDs without exposing data from other sessions.',
+        'List all IDs (captures, analyses, discoveries, generations) for a specific session. Secure - only shows your session data.',
       inputSchema: sessionIdSchema.shape
     },
     async (params) => {
@@ -579,42 +624,13 @@ const registerPlaceholderTools = () => {
   server.registerTool(
     'get_next_session_ids',
     {
-      title: 'Get Next Available Session IDs',
+      title: 'Get Next Session IDs',
       description:
-        'Returns IDs that are ready for the next phase of processing within a specific session (analysis, discovery, or generation).',
+        'Get IDs that are ready for the next workflow phase within a specific session. Secure - only shows your session data.',
       inputSchema: sessionIdSchema.shape
     },
     async (params) => {
       return handleGetNextSessionIds(params);
-    }
-  );
-
-  // Deprecated tools (kept for backward compatibility but with security warnings)
-
-  // Deprecated tools (kept for backward compatibility but with security warnings)
-  server.registerTool(
-    'list_all_ids',
-    {
-      title: '[DEPRECATED] List All Available IDs',
-      description:
-        '[SECURITY WARNING] This tool exposes IDs across all sessions. Use list_session_ids instead for security.',
-      inputSchema: {}
-    },
-    async () => {
-      return handleListAllIds();
-    }
-  );
-
-  server.registerTool(
-    'get_next_available_ids',
-    {
-      title: '[DEPRECATED] Get Next Available IDs',
-      description:
-        '[SECURITY WARNING] This tool exposes IDs across all sessions. Use get_next_session_ids instead for security.',
-      inputSchema: {}
-    },
-    async () => {
-      return handleGetNextIds();
     }
   );
 
@@ -636,7 +652,7 @@ const registerPlaceholderTools = () => {
     {
       title: 'Get Workflow Chain',
       description:
-        'Shows the complete workflow chain for a given ID and suggests the next step.',
+        'Shows the complete workflow chain for a given ID and suggests the next step. Supports session validation.',
       inputSchema: getWorkflowChainSchema.shape
     },
     async (params) => {
@@ -649,11 +665,38 @@ const registerPlaceholderTools = () => {
     {
       title: 'Validate ID',
       description:
-        'Validates if an ID exists and is of the correct type (capture, analysis, discovery, or generation).',
+        'Validates if an ID exists and is of the correct type. Supports session validation for security.',
       inputSchema: validateIdSchema.shape
     },
     async (params) => {
       return handleValidateId(params);
+    }
+  );
+
+  // Deprecated tools (kept for backward compatibility with security warnings)
+  server.registerTool(
+    'list_all_ids',
+    {
+      title: 'List All IDs (DEPRECATED)',
+      description:
+        '⚠️ DEPRECATED: Use list_session_ids instead. This tool shows IDs from all sessions and should not be used in multi-user environments.',
+      inputSchema: {}
+    },
+    async () => {
+      return handleListAllIds();
+    }
+  );
+
+  server.registerTool(
+    'get_next_available_ids',
+    {
+      title: 'Get Next Available IDs (DEPRECATED)',
+      description:
+        '⚠️ DEPRECATED: Use get_next_session_ids instead. This tool shows IDs from all sessions and should not be used in multi-user environments.',
+      inputSchema: {}
+    },
+    async () => {
+      return handleGetNextIds();
     }
   );
 };
