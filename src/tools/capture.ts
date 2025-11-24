@@ -4,6 +4,7 @@
  */
 
 import { BrowserManager } from '../lib/browser.js';
+import { DatabaseService } from '../lib/database.js';
 import { NetworkInterceptor } from '../lib/interceptor.js';
 import { Storage } from '../lib/storage.js';
 import type { CaptureSession } from '../lib/types.js';
@@ -49,6 +50,8 @@ export interface CaptureResult {
  */
 export async function captureNetworkRequests(options: CaptureOptions): Promise<CaptureResult> {
   const sessionId = options.sessionId || Storage.generateSessionId();
+  const db = DatabaseService.getInstance();
+  
   const browserManager = new BrowserManager({
     headless: true,
     stealth: true
@@ -60,7 +63,14 @@ export async function captureNetworkRequests(options: CaptureOptions): Promise<C
     ignoreStaticAssets: options.ignoreStaticAssets ?? true
   });
 
+  let captureId: string | null = null;
+
   try {
+    // Initialize database and create capture record
+    options.onProgress?.('Initializing capture tracking...');
+    await db.initialize();
+    captureId = await db.createCapture(sessionId, options.url);
+    
     // Ensure storage directories exist
     options.onProgress?.('Creating data directories...');
     await Storage.ensureDirectories();
@@ -95,6 +105,13 @@ export async function captureNetworkRequests(options: CaptureOptions): Promise<C
     // Collect captured data
     const requests = interceptor.getRequests();
     const responses = interceptor.getResponses();
+
+    // Update capture record with counts
+    await db.updateCapture(captureId, {
+      requestCount: requests.length,
+      responseCount: responses.length,
+      status: 'complete'
+    });
 
     // Extract unique domains
     const domains = Array.from(new Set(requests.map(req => new URL(req.url).hostname)));
@@ -164,7 +181,10 @@ export async function captureNetworkRequests(options: CaptureOptions): Promise<C
             ? 'Bearer token authentication detected.'
             : 'No obvious authentication mechanism found.',
         `Captured traffic from ${domains.length} domain(s). Main domain: ${new URL(options.url).hostname}`,
-        `Next: Run analyze_captured_data with captureId: ${sessionId}`
+        `✅ Capture Complete! Use this ID for next steps:`,
+        `📋 Capture ID: ${captureId}`,
+        `🔍 Next: Run analyze_captured_data with captureId: ${captureId}`,
+        `📊 Or use 'get_next_available_ids' to see all available IDs`
       ]
     };
 
@@ -172,7 +192,7 @@ export async function captureNetworkRequests(options: CaptureOptions): Promise<C
     const viewport = page.viewportSize() || { width: 1920, height: 1080 };
     const userAgent = await page.evaluate(() => navigator.userAgent);
 
-    // Create capture session
+    // Create capture session with indexed content for search
     const captureSession: CaptureSession = {
       id: sessionId,
       url: options.url,
@@ -180,8 +200,16 @@ export async function captureNetworkRequests(options: CaptureOptions): Promise<C
       endTime,
       userAgent,
       viewport,
-      requests,
-      responses,
+      requests: requests.map(req => ({
+        ...req,
+        // Add searchable content index
+        searchableContent: createSearchableContent(req)
+      })),
+      responses: responses.map(resp => ({
+        ...resp,
+        // Add searchable content index  
+        searchableContent: createSearchableContent(resp)
+      })),
       metadata: {
         totalRequests: requests.length,
         totalResponses: responses.length,
@@ -202,7 +230,7 @@ export async function captureNetworkRequests(options: CaptureOptions): Promise<C
 
     return {
       success: true,
-      captureId: sessionId,
+      captureId,
       sessionPath: saveResult.path,
       totalRequests: requests.length,
       totalResponses: responses.length,
@@ -210,9 +238,18 @@ export async function captureNetworkRequests(options: CaptureOptions): Promise<C
       analysis
     };
   } catch (error) {
+    // Update capture record as failed if we have the ID
+    if (captureId) {
+      try {
+        await db.updateCapture(captureId, { status: 'failed' });
+      } catch (dbError) {
+        console.error('Failed to update capture status:', dbError);
+      }
+    }
+
     return {
       success: false,
-      captureId: sessionId,
+      captureId: captureId || sessionId,
       totalRequests: 0,
       totalResponses: 0,
       domains: [],
@@ -234,4 +271,40 @@ export async function captureNetworkRequests(options: CaptureOptions): Promise<C
     interceptor.detach();
     await browserManager.close();
   }
+}
+
+/**
+ * Create searchable content for indexing
+ */
+function createSearchableContent(item: any): string {
+  const searchableFields = [];
+  
+  // Add URL and method for requests
+  if (item.url) searchableFields.push(item.url);
+  if (item.method) searchableFields.push(item.method);
+  
+  // Add headers (keys and values that might be searchable)
+  if (item.headers) {
+    Object.entries(item.headers).forEach(([key, value]) => {
+      searchableFields.push(key);
+      if (typeof value === 'string' && value.length < 200) {
+        // Only include short header values to avoid noise
+        searchableFields.push(value);
+      }
+    });
+  }
+  
+  // Add body content (truncated for performance)
+  if (item.body && typeof item.body === 'string') {
+    // Only include first 1000 characters of body for search
+    searchableFields.push(item.body.substring(0, 1000));
+  }
+  
+  // Add status text for responses
+  if (item.statusText) searchableFields.push(item.statusText);
+  
+  // Add MIME type for responses
+  if (item.mimeType) searchableFields.push(item.mimeType);
+  
+  return searchableFields.join(' ').toLowerCase();
 }

@@ -320,6 +320,7 @@ async function registerTools(server: McpServer) {
   const generateExportToolSchema = z.object({
     discoveryId: z.string().min(1),
     toolName: z.string().min(1),
+    description: z.string().min(1).describe('Description of what the tool does and what data it extracts. This helps the LLM generate better, more contextual code.').optional(),
     model: z.string().min(1).default('Qwen/Qwen3-Coder-30B-A3B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').optional(),
     targetUrl: z.string().url().optional(),
     outputDirectory: z.string().optional(),
@@ -662,14 +663,15 @@ async function registerTools(server: McpServer) {
     {
       title: 'Generate Export Tool',
       description:
-        'Renders a Handlebars template to build a reusable export script that replays discovered API calls.',
+        'Generates runnable export scripts from discovered API patterns. Include a description field to provide context for better code generation. LLMs should provide both toolName and description to help the code generation model create more relevant, contextual code.',
       inputSchema: generateExportToolSchema.shape
     },
-    async ({ discoveryId, toolName, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
+    async ({ discoveryId, toolName, description, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
       try {
         const result = await generateExportTool({
           discoveryId,
           toolName,
+          description,
           model,
           targetUrl,
           outputDirectory,

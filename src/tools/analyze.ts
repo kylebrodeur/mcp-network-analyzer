@@ -90,7 +90,7 @@ export async function analyzeCapturedData(
     });
 
     // Generate recommendations
-    const recommendations = generateRecommendations(analysis);
+    const recommendations = generateRecommendations(analysis, analysisId);
 
     // Format result for MCP response
     return {
@@ -149,7 +149,7 @@ export async function analyzeCapturedData(
 /**
  * Generate recommendations based on analysis
  */
-function generateRecommendations(analysis: AnalysisSummary): string[] {
+function generateRecommendations(analysis: AnalysisSummary, analysisId: string): string[] {
   const recommendations: string[] = [];
 
   // Authentication recommendations
@@ -207,6 +207,12 @@ function generateRecommendations(analysis: AnalysisSummary): string[] {
       "Simple API detected. You may proceed directly to generate_export_tool if patterns are clear."
     );
   }
+
+  // Always add the analysis ID for next steps
+  recommendations.push(`✅ Analysis Complete! Use this ID for next steps:`);
+  recommendations.push(`📋 Analysis ID: ${analysisId}`);
+  recommendations.push(`🔍 Next: Run discover_api_patterns with analysisId: ${analysisId}`);
+  recommendations.push(`📊 Or use 'get_next_available_ids' to see all available IDs`);
 
   return recommendations;
 }

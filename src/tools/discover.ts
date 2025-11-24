@@ -132,7 +132,7 @@ export async function discoverApiPatterns(
     });
 
     // Generate recommendations
-    const recommendations = generateDiscoveryRecommendations(discovery);
+    const recommendations = generateDiscoveryRecommendations(discovery, discoveryId);
 
     // Format result
     return {
@@ -201,7 +201,8 @@ function formatPattern(pattern: APIPattern) {
  * Generate recommendations based on discovery
  */
 function generateDiscoveryRecommendations(
-  discovery: PatternDiscoveryResult
+  discovery: PatternDiscoveryResult,
+  discoveryId: string
 ): string[] {
   const recommendations: string[] = [];
 
@@ -272,6 +273,13 @@ function generateDiscoveryRecommendations(
       "No clear API patterns detected. The site may use GraphQL, WebSockets, or non-standard APIs. Manual analysis may be required."
     );
   }
+
+  // Always add the discovery ID for next steps
+  recommendations.push(`✅ Discovery Complete! Use this ID for next steps:`);
+  recommendations.push(`📋 Discovery ID: ${discoveryId}`);
+  recommendations.push(`🔧 Next: Run generate_export_tool with discoveryId: ${discoveryId}`);
+  recommendations.push(`💡 Tip: Include a meaningful toolName and description when generating export tools for better code quality`);
+  recommendations.push(`📊 Or use 'get_next_available_ids' to see all available IDs`);
 
   return recommendations;
 }

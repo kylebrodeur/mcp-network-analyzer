@@ -11,6 +11,7 @@ export interface CapturedRequest {
   body?: string;
   resourceType: string; // 'xhr', 'fetch', 'document', 'script', 'stylesheet', 'image', etc.
   postData?: string;
+  searchableContent?: string; // Indexed content for search
 }
 
 export interface CapturedResponse {
@@ -23,6 +24,7 @@ export interface CapturedResponse {
   body: string;
   size: number;
   mimeType?: string;
+  searchableContent?: string; // Indexed content for search
 }
 
 export interface CaptureSession {

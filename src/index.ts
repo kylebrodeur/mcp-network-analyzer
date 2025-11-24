@@ -41,6 +41,8 @@ import { analyzeCapturedData } from './tools/analyze.js';
 import { captureNetworkRequests } from './tools/capture.js';
 import { discoverApiPatterns } from './tools/discover.js';
 import { generateExportTool } from './tools/generate.js';
+import { handleGenerateSessionId, handleGetNextIds, handleGetWorkflowChain, handleListAllIds, handleValidateId } from './tools/id-management.js';
+import { handleSearchExportedData } from './tools/search.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
@@ -104,6 +106,7 @@ const discoverApiPatternsSchema = z.object({
 const generateExportToolSchema = z.object({
   discoveryId: z.string().min(1),
   toolName: z.string().min(1),
+  description: z.string().min(1).describe('Description of what the tool does and what data it extracts. This helps the LLM generate better, more contextual code.').optional(),
   model: z.string().min(1).default('Qwen/Qwen3-Coder-30B-A3B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').optional(),
   targetUrl: z.string().url().optional(),
   outputDirectory: z.string().optional(),
@@ -118,6 +121,15 @@ const searchExportedDataSchema = z.object({
   statusCode: z.union([z.number().int(), z.array(z.number().int())]).optional(),
   limit: z.number().int().positive().max(1000).default(100).optional(),
   includeResponses: z.boolean().optional()
+});
+
+const getWorkflowChainSchema = z.object({
+  id: z.string().min(1)
+});
+
+const validateIdSchema = z.object({
+  id: z.string().min(1),
+  type: z.enum(['capture', 'analysis', 'discovery', 'generation'])
 });
 
 const registerPlaceholderTools = () => {
@@ -453,14 +465,15 @@ const registerPlaceholderTools = () => {
     {
       title: 'Generate Export Tool',
       description:
-        'Renders a Handlebars template to build a reusable export script that replays discovered API calls.',
+        'Generates runnable export scripts from discovered API patterns. Include a description field to provide context for better code generation. LLMs should provide both toolName and description to help the code generation model create more relevant, contextual code.',
       inputSchema: generateExportToolSchema.shape
     },
-    async ({ discoveryId, toolName, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
+    async ({ discoveryId, toolName, description, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
       try {
         const result = await generateExportTool({
           discoveryId,
           toolName,
+          description,
           model,
           targetUrl,
           outputDirectory,
@@ -538,7 +551,74 @@ const registerPlaceholderTools = () => {
         'Queries captured or generated artifacts via filters (status codes, domains, time ranges, and free-text search).',
       inputSchema: searchExportedDataSchema.shape
     },
-    makeNotImplementedHandler('search_exported_data') as ToolCallback<typeof searchExportedDataSchema.shape>
+    async (params) => {
+      return handleSearchExportedData(params);
+    }
+  );
+
+  server.registerTool(
+    'list_all_ids',
+    {
+      title: 'List All Available IDs',
+      description:
+        'Lists all capture, analysis, discovery, and generation IDs with their status and details.',
+      inputSchema: {}
+    },
+    async () => {
+      return handleListAllIds();
+    }
+  );
+
+  server.registerTool(
+    'get_next_available_ids',
+    {
+      title: 'Get Next Available IDs',
+      description:
+        'Returns IDs that are ready for the next phase of processing (analysis, discovery, or generation).',
+      inputSchema: {}
+    },
+    async () => {
+      return handleGetNextIds();
+    }
+  );
+
+  server.registerTool(
+    'generate_session_id',
+    {
+      title: 'Generate New Session ID',
+      description:
+        'Generates a new unique session ID for use with capture_network_requests.',
+      inputSchema: {}
+    },
+    async () => {
+      return handleGenerateSessionId();
+    }
+  );
+
+  server.registerTool(
+    'get_workflow_chain',
+    {
+      title: 'Get Workflow Chain',
+      description:
+        'Shows the complete workflow chain for a given ID and suggests the next step.',
+      inputSchema: getWorkflowChainSchema.shape
+    },
+    async (params) => {
+      return handleGetWorkflowChain(params);
+    }
+  );
+
+  server.registerTool(
+    'validate_id',
+    {
+      title: 'Validate ID',
+      description:
+        'Validates if an ID exists and is of the correct type (capture, analysis, discovery, or generation).',
+      inputSchema: validateIdSchema.shape
+    },
+    async (params) => {
+      return handleValidateId(params);
+    }
   );
 };
 

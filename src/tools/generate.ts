@@ -13,6 +13,7 @@ import { Storage } from "../lib/storage.js";
 export interface GenerateOptions {
   discoveryId: string;
   toolName: string;
+  description?: string;
   targetUrl?: string;
   outputDirectory?: string;
   outputFormat?: "json" | "csv" | "sqlite";
@@ -93,6 +94,7 @@ export async function generateExportTool(
       language: language as any,
       patterns: discovery.patterns,
       toolName: options.toolName,
+      description: options.description,
       targetUrl,
       outputFormat: options.outputFormat || "json",
       includeAuth: hasAuth,
@@ -133,12 +135,14 @@ export async function generateExportTool(
 
     // Generate usage instructions
     const instructions = generateUsageInstructions(
+      options.toolName,
       language,
       fileName,
       hasAuth,
       hasPagination,
       hasRateLimiting,
-      options.outputFormat || "json"
+      options.outputFormat || "json",
+      generationId
     );
 
     // Update database record with results
@@ -176,12 +180,14 @@ export async function generateExportTool(
  * Generate usage instructions for the generated tool
  */
 function generateUsageInstructions(
+  toolName: string,
   language: string,
   fileName: string,
   hasAuth: boolean,
   hasPagination: boolean,
   hasRateLimiting: boolean,
-  outputFormat: string
+  outputFormat: string,
+  generationId: string
 ): string {
   let instructions = `# Usage Instructions for ${fileName}\n\n`;
 
@@ -231,7 +237,13 @@ function generateUsageInstructions(
   instructions += "- Review the generated code before running\n";
   instructions += "- Customize authentication, URLs, or parameters as needed\n";
   instructions += "- Test with a small dataset first\n";
-  instructions += "- Monitor rate limits to avoid being blocked\n";
+  instructions += "- Monitor rate limits to avoid being blocked\n\n";
+
+  // Add generation completion info
+  instructions += "## Generation Complete! \u2705\n";
+  instructions += `\ud83d\udccb Generation ID: ${generationId}\n`;
+  instructions += `\ud83d\udd27 Tool Name: ${toolName}\n`;
+  instructions += `\ud83d\udcca Use 'list_all_ids' to see the complete workflow chain\n`;
 
   return instructions;
 }

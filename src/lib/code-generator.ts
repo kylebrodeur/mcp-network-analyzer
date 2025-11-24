@@ -18,6 +18,7 @@ export interface CodeGenerationOptions {
   language: "typescript" | "python" | "javascript" | "go";
   patterns: APIPattern[];
   toolName: string;
+  description?: string;
   targetUrl?: string;
   outputFormat: "json" | "csv" | "sqlite";
   includeAuth: boolean;
@@ -128,6 +129,13 @@ export class CodeGenerator {
     let prompt = languageGuidance ? `${languageGuidance}\n\n---\n\n` : "";
     
     prompt += `Generate a ${options.language} script named "${options.toolName}" that exports data from the following API endpoints:\n\n`;
+    
+    // Add description if provided
+    if (options.description) {
+      prompt += `## Tool Description\n\n`;
+      prompt += `${options.description}\n\n`;
+      prompt += `This context should guide your implementation to ensure the generated code is relevant and well-suited for the intended use case.\n\n`;
+    }
 
     // Add API patterns
     prompt += "## API Endpoints\n\n";

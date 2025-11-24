@@ -342,6 +342,139 @@ export class DatabaseService {
   }
 
   /**
+   * Create a capture record
+   */
+  public async createCapture(sessionId: string, targetUrl: string): Promise<string> {
+    if (!this.data) throw new Error('Database not initialized');
+
+    const captureId = `capture_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+    const now = new Date().toISOString();
+    
+    this.data.captures[captureId] = {
+      id: captureId,
+      sessionId,
+      targetUrl,
+      timestamp: now,
+      requestCount: 0,
+      responseCount: 0,
+      status: 'active',
+      createdAt: now
+    };
+
+    await this.saveData();
+    return captureId;
+  }
+
+  /**
+   * Update capture record
+   */
+  public async updateCapture(id: string, data: Partial<CaptureRecord>): Promise<void> {
+    if (!this.data) throw new Error('Database not initialized');
+
+    const existing = this.data.captures[id];
+    if (!existing) {
+      throw new Error(`Capture ${id} not found`);
+    }
+
+    Object.assign(existing, data);
+    await this.saveData();
+  }
+
+  /**
+   * Get capture by ID
+   */
+  public getCapture(id: string): CaptureRecord | null {
+    if (!this.data) throw new Error('Database not initialized');
+    return this.data.captures[id] || null;
+  }
+
+  /**
+   * List all captures
+   */
+  public listCaptures(): CaptureRecord[] {
+    if (!this.data) throw new Error('Database not initialized');
+    return Object.values(this.data.captures).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  /**
+   * Search captures by criteria
+   */
+  public searchCaptures(criteria: {
+    targetUrl?: string;
+    status?: CaptureRecord['status'];
+    startDate?: string;
+    endDate?: string;
+  }): CaptureRecord[] {
+    if (!this.data) throw new Error('Database not initialized');
+
+    let results = Object.values(this.data.captures);
+
+    if (criteria.targetUrl) {
+      const searchUrl = criteria.targetUrl.toLowerCase();
+      results = results.filter(capture => 
+        capture.targetUrl.toLowerCase().includes(searchUrl)
+      );
+    }
+
+    if (criteria.status) {
+      results = results.filter(capture => capture.status === criteria.status);
+    }
+
+    if (criteria.startDate) {
+      const startTime = new Date(criteria.startDate);
+      results = results.filter(capture => 
+        new Date(capture.createdAt) >= startTime
+      );
+    }
+
+    if (criteria.endDate) {
+      const endTime = new Date(criteria.endDate);
+      results = results.filter(capture => 
+        new Date(capture.createdAt) <= endTime
+      );
+    }
+
+    return results.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  /**
+   * Get analyses for a specific capture
+   */
+  public getAnalysesByCapture(captureId: string): AnalysisRecord[] {
+    if (!this.data) throw new Error('Database not initialized');
+    
+    return Object.values(this.data.analyses)
+      .filter(analysis => analysis.captureId === captureId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
+   * Get discoveries for a specific analysis
+   */
+  public getDiscoveriesByAnalysis(analysisId: string): DiscoveryRecord[] {
+    if (!this.data) throw new Error('Database not initialized');
+    
+    return Object.values(this.data.discoveries)
+      .filter(discovery => discovery.analysisId === analysisId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
+   * Get generations for a specific discovery
+   */
+  public getGenerationsByDiscovery(discoveryId: string): GenerationRecord[] {
+    if (!this.data) throw new Error('Database not initialized');
+    
+    return Object.values(this.data.generations)
+      .filter(generation => generation.discoveryId === discoveryId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
    * Clear all data (for testing)
    */
   public async clear(): Promise<void> {
