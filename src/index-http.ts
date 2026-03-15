@@ -47,9 +47,8 @@ import { getDatabaseStats, listAnalyses, listDiscoveries } from './tools/query.j
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
 
-// Blaxel injects these environment variables during deployment
-const PORT = parseInt(process.env.BL_SERVER_PORT || process.env.PORT || '3000', 10);
-const HOST = process.env.BL_SERVER_HOST || '0.0.0.0';
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOST = process.env.HOST || '0.0.0.0';
 
 function buildUsageInstructions(): string {
   return [
@@ -111,7 +110,6 @@ async function main() {
   const httpServer = app.listen(PORT, HOST, () => {
     console.error(`[HTTP] MCP Network Analyzer listening on http://${HOST}:${PORT}/mcp (Streamable HTTP)`);
     console.error(`[HTTP] Health check: http://${HOST}:${PORT}/health`);
-    console.error(`[HTTP] Blaxel endpoint: https://run.blaxel.ai/{workspace}/functions/{server-name}/mcp`);
     console.error(`[HTTP] Transport: Streamable HTTP (POST requests with JSON)`);
   });
 
@@ -321,7 +319,7 @@ async function registerTools(server: McpServer) {
     discoveryId: z.string().min(1),
     toolName: z.string().min(1),
     description: z.string().min(1).describe('Description of what the tool does and what data it extracts. This helps the LLM generate better, more contextual code.').optional(),
-    model: z.string().min(1).default('Qwen/Qwen3-Coder-30B-A3B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').optional(),
+    model: z.string().min(1).default('qwen2.5-coder:7b').describe('Model to use. For Ollama: e.g. qwen2.5-coder:7b, codellama:7b. For HuggingFace: e.g. Qwen/Qwen2.5-Coder-32B-Instruct. Set LLM_PROVIDER=huggingface to use HF inference gateway.').optional(),
     targetUrl: z.string().url().optional(),
     outputDirectory: z.string().optional(),
     outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),

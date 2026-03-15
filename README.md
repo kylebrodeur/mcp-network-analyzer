@@ -6,10 +6,9 @@ A Model Context Protocol (MCP) server that provides intelligent network request 
 
 - 🕵️ **Network Traffic Capture**: Intercept and record HTTP requests/responses from any website
 - 🧠 **Intelligent API Discovery**: Automatically identify REST patterns, authentication methods, and data structures
-- 🛠️ **Tool Generation**: Generate custom export scripts for discovered APIs using HuggingFace + Nebius AI
+- 🛠️ **Tool Generation**: Generate custom export scripts for discovered APIs using local AI via Ollama or HuggingFace Inference Gateway
 - 🔍 **Data Search**: Query and search captured data
 - 🌐 **Universal**: Works with any website, not just specific platforms
-- 🎨 **Gradio Web UI**: Beautiful interface for non-technical users (deploy to Modal)
 
 ## Quick Start
 
@@ -26,7 +25,7 @@ pnpm run setup
 ```
 
 The setup wizard will guide you through:
-- Choosing storage mode (Local, Cloud, HuggingFace Dataset, or Blaxel)
+- Choosing storage mode (Local or Cloud)
 - Configuring credentials (if needed)
 - Creating configuration files
 
@@ -97,7 +96,7 @@ The server runs locally and connects directly to Claude Desktop via stdio or HTT
 
 ### Remote Server
 
-Connect to a hosted MCP server (e.g., on Blaxel, AWS, or your own infrastructure). Best for:
+Connect to a hosted MCP server (e.g., on AWS, GCP, or your own infrastructure). Best for:
 - Team collaboration (shared captures)
 - Production deployments
 - Cloud-native setups
@@ -107,7 +106,7 @@ pnpm run setup  # Choose "Remote" when prompted
 ```
 
 **Setup prompts:**
-1. Remote server URL (e.g., `https://run.blaxel.ai/username/functions/mcp-network-analyzer/mcp`)
+1. Remote server URL (e.g., `https://your-server.com/mcp`)
 2. Authentication method (Bearer Token, API Key, or Basic Auth)
 
 **Example remote config:**
@@ -138,7 +137,7 @@ pnpm run build
 
 ## Storage Modes
 
-MCP Network Analyzer supports three storage modes:
+MCP Network Analyzer supports two storage modes:
 
 ### Local Mode (Default)
 Stores all captured data in local file system.
@@ -180,30 +179,6 @@ node dist/index.js
 - `MCP_CLOUD_ACCESS_KEY_ID` - Access key/credential
 - `MCP_CLOUD_SECRET_ACCESS_KEY` - Secret key/credential
 
-### Blaxel Mode (MCP Hosting)
-Integrates with [Blaxel](https://blaxel.ai) hosting service for optimized MCP storage.
-
-```bash
-# Blaxel hosting
-MCP_STORAGE_MODE=blaxel \
-BLAXEL_PROJECT_ID=your-project-id \
-BLAXEL_API_KEY=your-api-key \
-node dist/index.js
-
-# Optional: Custom Blaxel endpoint
-BLAXEL_ENDPOINT=https://api.custom.blaxel.ai \
-MCP_STORAGE_MODE=blaxel \
-BLAXEL_PROJECT_ID=your-project-id \
-BLAXEL_API_KEY=your-api-key \
-node dist/index.js
-```
-
-**Blaxel Configuration Environment Variables:**
-- `MCP_STORAGE_MODE` - Set to `blaxel` for Blaxel hosting
-- `BLAXEL_PROJECT_ID` - Your Blaxel project identifier
-- `BLAXEL_API_KEY` - Your Blaxel API key (optional for local dev)
-- `BLAXEL_ENDPOINT` - Custom endpoint (optional, defaults to https://api.blaxel.ai)
-
 ## Transport Modes
 
 MCP Network Analyzer supports two transport modes:
@@ -217,7 +192,7 @@ node dist/index.js
 ```
 
 ### HTTP/Streamable HTTP Transport
-Required for Blaxel cloud hosting and remote MCP connections. Uses Express.js with Server-Sent Events (SSE) for streaming.
+For remote MCP connections and self-hosted deployments. Uses Express.js with Server-Sent Events (SSE) for streaming.
 
 ```bash
 # Start HTTP server (default port 3000)
@@ -228,9 +203,6 @@ pnpm run dev:http
 
 # Custom port
 PORT=3001 node dist/index-http.js
-
-# Blaxel hosting (uses BL_SERVER_HOST and BL_SERVER_PORT)
-BL_SERVER_HOST=0.0.0.0 BL_SERVER_PORT=8080 node dist/index-http.js
 ```
 
 **HTTP Mode Endpoints:**
@@ -278,23 +250,6 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
         "MCP_CLOUD_REGION": "us-east-1",
         "MCP_CLOUD_ACCESS_KEY_ID": "your-access-key",
         "MCP_CLOUD_SECRET_ACCESS_KEY": "your-secret-key"
-      }
-    }
-  }
-}
-```
-
-### Blaxel Mode (Hosted MCP)
-```json
-{
-  "mcpServers": {
-    "network-analyzer": {
-      "command": "node",
-      "args": ["/Users/kylebrodeur/mcp-network-analyzer/dist/index.js"],
-      "env": {
-        "MCP_STORAGE_MODE": "blaxel",
-        "BLAXEL_PROJECT_ID": "your-project-id",
-        "BLAXEL_API_KEY": "your-api-key"
       }
     }
   }
@@ -353,26 +308,22 @@ The captured data will include:
 
 - ✅ **Phase 1 Complete**: MCP server scaffold with tool registration
 - ✅ **Phase 2 Complete**: Network capture tool with browser automation  
-- ✅ **Phase 2.5 Complete**: Blaxel deployment with HTTP/Streamable HTTP transport
-- 🚧 **Phase 3 In Progress**: Analysis and pattern discovery tools (hackathon priority)
-- 🚧 **Phase 4 In Progress**: Export code generation with Claude API (hackathon priority)
-- 🆕 **Phase 4.5 Planned**: Modal + Gradio 6 web UI (hackathon demo)
+- ✅ **Phase 2.5 Complete**: HTTP/Streamable HTTP transport for remote deployments
+- 🚧 **Phase 3 In Progress**: Analysis and pattern discovery tools
+- 🚧 **Phase 4 In Progress**: Export code generation with local/cloud AI
 - ⏳ **Phase 5 Planned**: Data search and query capabilities
 
 **Current Features:**
 
 - Full network traffic capture with Playwright
-- Multi-mode storage: local, cloud (S3/GCS/Azure), and Blaxel
-- **Production deployment on Blaxel with private workspace authentication**
-- **Live endpoint**: `https://run.blaxel.ai/kylebrodeur/functions/mcp-network-analyzer/mcp`
+- Multi-mode storage: local, cloud (S3/GCS/Azure)
+- AI-powered code generation via Ollama (local) or HuggingFace Inference Gateway
 
-**Coming Soon (Hackathon):**
+**Coming Soon:**
 
 - Request/response analysis with endpoint grouping
 - Authentication method detection (cookies, bearer tokens, custom headers)
 - API pattern discovery (REST, pagination, rate limiting)
-- **AI-powered code generation** (TypeScript, Python, Go, JavaScript)
-- **Gradio 6 web UI on Modal** for visualization and interaction
 - Data model inference from responses
 
 See [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for detailed roadmap.
@@ -439,9 +390,7 @@ Generate a complete, runnable export script for the discovered API using Claude 
 
 - `discoveryId` (string, required): ID from discover_api_patterns
 - `toolName` (string, required): Name for the generated tool
-- `model` (string, optional): Model to use via HuggingFace + Nebius provider (default: Qwen/Qwen3-Coder-30B-A3B-Instruct)
-  - Available models: All Nebius models on HuggingFace Hub
-  - Configure Nebius API key at: <https://huggingface.co/settings/inference-providers>
+- `model` (string, optional): Override model. Ollama: e.g. `qwen2.5-coder:7b`, `codellama:7b`. HuggingFace: e.g. `Qwen/Qwen2.5-Coder-32B-Instruct`. Defaults to `OLLAMA_MODEL` / `HF_MODEL` env vars.
 - `targetUrl` (string, optional): Override target URL (auto-detected if not provided)
 - `outputDirectory` (string, optional): Custom output directory (default: data/generated)
 - `outputFormat` (string, optional): Output format (json, csv, sqlite - default: json)
@@ -459,8 +408,8 @@ Generate a complete, runnable export script for the discovered API using Claude 
 
 **Features:**
 
-- 🤖 **AI-Powered**: Uses HuggingFace Inference with Nebius provider for intelligent code generation
-- 🔐 **Secure**: API keys stored in HuggingFace account settings, not passed as parameters
+- 🤖 **AI-Powered**: Uses Ollama (local, default) or HuggingFace Inference Gateway for code generation
+- 🔐 **Secure**: API keys stored in environment variables, not passed as parameters
 - 🔐 **Authentication**: Automatic auth injection (Bearer, API key, cookies) in generated code
 - 📄 **Pagination**: Handles pagination automatically
 - ⚡ **Rate Limiting**: Configurable delays between requests
@@ -468,22 +417,34 @@ Generate a complete, runnable export script for the discovered API using Claude 
 - 📝 **Type Safety**: TypeScript types or Python type hints
 - 🚀 **Production Ready**: Executable immediately after generation
 
-**Setup:**
+**Setup — Ollama (default):**
 
-1. Get a Nebius Token Factory API key: <https://tokenfactory.nebius.com/project/api-keys>
-2. Add it to your HuggingFace account: <https://huggingface.co/settings/inference-providers>
-   - Click the key icon in the "Nebius Token Factory" row
-   - Enter your Nebius API key
-3. Set your HuggingFace token as an environment variable:
+1. [Install Ollama](https://ollama.com/download)
+2. Pull a coding model:
 
    ```bash
+   ollama pull qwen2.5-coder:7b
+   ```
+
+3. The server auto-connects to `http://localhost:11434`
+
+**Setup — HuggingFace Inference Gateway:**
+
+1. Get a HuggingFace token: <https://huggingface.co/settings/tokens>
+2. Set environment variables:
+
+   ```bash
+   export LLM_PROVIDER=huggingface
    export HF_TOKEN="hf_your_token_here"
    ```
 
 **Environment Variables:**
 
-- `HF_TOKEN` (required): Your HuggingFace token (get from <https://huggingface.co/settings/tokens>)
-- `NEBIUS_MODEL` (optional): Default model to use (default: Qwen/Qwen3-Coder-30B-A3B-Instruct)
+- `LLM_PROVIDER` (optional): `ollama` (default) or `huggingface`
+- `OLLAMA_HOST` (optional): Ollama base URL (default: `http://localhost:11434`)
+- `OLLAMA_MODEL` (optional): Ollama model (default: `qwen2.5-coder:7b`)
+- `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` (required for HuggingFace): Your HF API token
+- `HF_MODEL` (optional): HuggingFace model ID (default: `Qwen/Qwen2.5-Coder-32B-Instruct`)
 
 **Example:**
 

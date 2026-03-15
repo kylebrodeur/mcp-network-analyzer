@@ -41,9 +41,9 @@ import { analyzeCapturedData } from './tools/analyze.js';
 import { captureNetworkRequests } from './tools/capture.js';
 import { discoverApiPatterns } from './tools/discover.js';
 import { generateExportTool } from './tools/generate.js';
+import { handleGetContextualHelp, handleGetHelp, handleGetQuickStart } from './tools/help.js';
 import { handleGenerateSessionId, handleGetNextIds, handleGetNextSessionIds, handleGetWorkflowChain, handleListAllIds, handleListSessionIds, handleValidateId } from './tools/id-management.js';
 import { handleSearchExportedData } from './tools/search.js';
-import { handleGetHelp, handleGetContextualHelp, handleGetQuickStart } from './tools/help.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
@@ -108,7 +108,7 @@ const generateExportToolSchema = z.object({
   discoveryId: z.string().min(1),
   toolName: z.string().min(1),
   description: z.string().min(1).describe('Description of what the tool does and what data it extracts. This helps the LLM generate better, more contextual code.').nullable().optional(),
-  model: z.string().min(1).default('Qwen/Qwen3-Coder-30B-A3B-Instruct').describe('Model to use via HuggingFace + Nebius provider. Configure Nebius API key at https://huggingface.co/settings/inference-providers').nullable().optional(),
+  model: z.string().min(1).default('qwen2.5-coder:7b').describe('Model to use. For Ollama: e.g. qwen2.5-coder:7b, codellama:7b. For HuggingFace: e.g. Qwen/Qwen2.5-Coder-32B-Instruct. Set LLM_PROVIDER=huggingface to use HF inference gateway.').nullable().optional(),
   targetUrl: z.string().url().nullable().optional(),
   outputDirectory: z.string().nullable().optional(),
   outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),

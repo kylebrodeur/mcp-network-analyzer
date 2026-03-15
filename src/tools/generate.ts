@@ -105,7 +105,7 @@ export async function generateExportTool(
       paginationParams: discovery.pagination?.params,
     };
 
-    // Generate code using HuggingFace Inference with Nebius provider
+    // Generate code using configured LLM provider (Ollama or HuggingFace)
     const generator = new CodeGenerator(options.model);
     const result = await generator.generate(codeGenOptions);
 

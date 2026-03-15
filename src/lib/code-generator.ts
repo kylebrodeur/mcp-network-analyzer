@@ -1,6 +1,14 @@
 /**
- * Code generator using Nebius Token Factory (OpenAI-compatible API) and Handlebars templates
- * Generates export scripts in multiple languages from discovered API patterns
+ * Code generator using Ollama (local, default) or HuggingFace Inference Gateway
+ * Configure via LLM_PROVIDER env var: 'ollama' (default) | 'huggingface'
+ *
+ * Ollama env vars:
+ *   OLLAMA_HOST  — base URL (default: http://localhost:11434)
+ *   OLLAMA_MODEL — model name (default: qwen2.5-coder:7b)
+ *
+ * HuggingFace env vars:
+ *   HF_TOKEN / HUGGING_FACE_HUB_TOKEN — API token
+ *   HF_MODEL — model ID (default: Qwen/Qwen2.5-Coder-32B-Instruct)
  */
 
 import { HfInference } from "@huggingface/inference";
@@ -37,58 +45,49 @@ export interface CodeGenerationResult {
   error?: string;
 }
 
+type LLMProvider = 'ollama' | 'huggingface';
+
+interface OllamaChatResponse {
+  choices: Array<{ message: { content: string } }>;
+  usage?: { total_tokens?: number };
+}
+
 /**
- * Code generator class using HuggingFace Inference with Nebius provider
- * API key is securely stored in HuggingFace account settings
+ * Code generator class supporting Ollama (local) and HuggingFace Inference Gateway.
+ * Defaults to Ollama. Set LLM_PROVIDER=huggingface to use HF.
  */
 export class CodeGenerator {
-  private client: HfInference;
+  private provider: LLMProvider;
   private model: string;
+  private ollamaHost: string;
+  private hfClient?: HfInference;
 
   constructor(model?: string) {
-    // HuggingFace token should be set in environment or HF config
-    // Nebius API key should be configured in HuggingFace account:
-    // https://huggingface.co/settings/inference-providers
-    const hfToken = process.env.HF_TOKEN || process.env.HUGGING_FACE_HUB_TOKEN;
-    
-    this.model = model || process.env.NEBIUS_MODEL || "Qwen/Qwen3-Coder-30B-A3B-Instruct";
-    
-    this.client = new HfInference(hfToken);
+    this.provider = (process.env.LLM_PROVIDER as LLMProvider) || 'ollama';
+    this.ollamaHost = process.env.OLLAMA_HOST || 'http://localhost:11434';
+
+    if (this.provider === 'huggingface') {
+      const hfToken = process.env.HF_TOKEN || process.env.HUGGING_FACE_HUB_TOKEN;
+      this.model = model || process.env.HF_MODEL || 'Qwen/Qwen2.5-Coder-32B-Instruct';
+      this.hfClient = new HfInference(hfToken);
+    } else {
+      // Ollama (default)
+      this.model = model || process.env.OLLAMA_MODEL || 'qwen2.5-coder:7b';
+    }
   }
 
   /**
-   * Generate export script code using HuggingFace Inference with Nebius provider
+   * Generate export script code using the configured LLM provider
    */
   async generate(options: CodeGenerationOptions): Promise<CodeGenerationResult> {
     try {
       const systemPrompt = await this.loadSystemPrompt();
       const userPrompt = await this.buildPromptFromTemplate(options);
 
-      const response = await this.client.chatCompletion({
-        model: this.model,
-        provider: "nebius",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "user",
-            content: userPrompt,
-          },
-        ],
-        max_tokens: 4096,
-        temperature: 0.7,
-      });
-
-      const code = this.extractCode(response.choices[0]?.message?.content || "");
-
-      return {
-        success: true,
-        code,
-        language: options.language,
-        tokensUsed: response.usage?.total_tokens,
-      };
+      if (this.provider === 'huggingface') {
+        return await this.generateWithHuggingFace(systemPrompt, userPrompt, options.language);
+      }
+      return await this.generateWithOllama(systemPrompt, userPrompt, options.language);
     } catch (error) {
       return {
         success: false,
@@ -96,6 +95,71 @@ export class CodeGenerator {
         error: error instanceof Error ? error.message : String(error),
       };
     }
+  }
+
+  /**
+   * Generate code via Ollama's OpenAI-compatible endpoint
+   */
+  private async generateWithOllama(
+    system: string,
+    user: string,
+    language: string
+  ): Promise<CodeGenerationResult> {
+    const response = await fetch(`${this.ollamaHost}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: this.model,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+        max_tokens: 4096,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as OllamaChatResponse;
+    const code = this.extractCode(data.choices[0]?.message?.content || '');
+
+    return {
+      success: true,
+      code,
+      language,
+      tokensUsed: data.usage?.total_tokens,
+    };
+  }
+
+  /**
+   * Generate code via HuggingFace Inference Gateway
+   */
+  private async generateWithHuggingFace(
+    system: string,
+    user: string,
+    language: string
+  ): Promise<CodeGenerationResult> {
+    const response = await this.hfClient!.chatCompletion({
+      model: this.model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      max_tokens: 4096,
+      temperature: 0.7,
+    });
+
+    const code = this.extractCode(response.choices[0]?.message?.content || '');
+
+    return {
+      success: true,
+      code,
+      language,
+      tokensUsed: response.usage?.total_tokens,
+    };
   }
 
   /**
