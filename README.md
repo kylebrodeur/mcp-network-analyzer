@@ -1,12 +1,12 @@
 # MCP Network Analyzer
 
-A Model Context Protocol (MCP) server that provides intelligent network request analysis and automated tool generation for any website.
+A Model Context Protocol (MCP) server that provides intelligent network request capture, analysis, and API pattern discovery.
 
 ## Features
 
 - 🕵️ **Network Traffic Capture**: Intercept and record HTTP requests/responses from any website
 - 🧠 **Intelligent API Discovery**: Automatically identify REST patterns, authentication methods, and data structures
-- 🛠️ **Tool Generation**: Generate custom export scripts for discovered APIs using local AI via Ollama or HuggingFace Inference Gateway
+
 - 🔍 **Data Search**: Query and search captured data
 - 🌐 **Universal**: Works with any website, not just specific platforms
 
@@ -291,9 +291,8 @@ User: "Discover API patterns from analysis_abc"
 → Returns discoveryId: discovery_123
 → Shows REST patterns, pagination, data models
 
-# 4. Generate export tool
-User: "Generate export tool from discovery_123"
-→ Returns generatedPath and usage instructions
+# 4. Search / query the captured data
+User: "Search captured data for POST endpoints"
 ```
 
 The captured data will include:
@@ -309,22 +308,14 @@ The captured data will include:
 - ✅ **Phase 1 Complete**: MCP server scaffold with tool registration
 - ✅ **Phase 2 Complete**: Network capture tool with browser automation  
 - ✅ **Phase 2.5 Complete**: HTTP/Streamable HTTP transport for remote deployments
-- 🚧 **Phase 3 In Progress**: Analysis and pattern discovery tools
-- 🚧 **Phase 4 In Progress**: Export code generation with local/cloud AI
-- ⏳ **Phase 5 Planned**: Data search and query capabilities
+- ✅ **Phase 3 Complete**: Analysis and pattern discovery tools
+- ✅ **Phase 4 Complete**: Data search and query capabilities
 
 **Current Features:**
 
 - Full network traffic capture with Playwright
 - Multi-mode storage: local, cloud (S3/GCS/Azure)
-- AI-powered code generation via Ollama (local) or HuggingFace Inference Gateway
-
-**Coming Soon:**
-
-- Request/response analysis with endpoint grouping
-- Authentication method detection (cookies, bearer tokens, custom headers)
-- API pattern discovery (REST, pagination, rate limiting)
-- Data model inference from responses
+- REST pattern detection, authentication discovery, pagination and rate limit analysis
 
 See [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for detailed roadmap.
 
@@ -381,115 +372,6 @@ Deep analysis of API structure with pattern recognition.
 - `includeAuthInsights` (boolean, optional): Include authentication analysis
 
 **Returns:** Detailed API patterns, data models, and extraction strategies
-
-### `generate_export_tool` ✅ Implemented
-
-Generate a complete, runnable export script for the discovered API using Claude AI.
-
-**Parameters:**
-
-- `discoveryId` (string, required): ID from discover_api_patterns
-- `toolName` (string, required): Name for the generated tool
-- `model` (string, optional): Override model. Ollama: e.g. `qwen2.5-coder:7b`, `codellama:7b`. HuggingFace: e.g. `Qwen/Qwen2.5-Coder-32B-Instruct`. Defaults to `OLLAMA_MODEL` / `HF_MODEL` env vars.
-- `targetUrl` (string, optional): Override target URL (auto-detected if not provided)
-- `outputDirectory` (string, optional): Custom output directory (default: data/generated)
-- `outputFormat` (string, optional): Output format (json, csv, sqlite - default: json)
-- `language` (string, optional): Programming language (typescript, python, javascript, go - default: typescript)
-- `incremental` (boolean, optional): Support incremental exports (planned feature)
-
-**Returns:**
-
-- `generatedPath`: Full path to generated script
-- `fileName`: Name of the generated file
-- `language`: Programming language used
-- `linesOfCode`: Number of lines generated
-- `tokensUsed`: Claude API tokens consumed
-- `instructions`: Usage instructions for running the script
-
-**Features:**
-
-- 🤖 **AI-Powered**: Uses Ollama (local, default) or HuggingFace Inference Gateway for code generation
-- 🔐 **Secure**: API keys stored in environment variables, not passed as parameters
-- 🔐 **Authentication**: Automatic auth injection (Bearer, API key, cookies) in generated code
-- 📄 **Pagination**: Handles pagination automatically
-- ⚡ **Rate Limiting**: Configurable delays between requests
-- 🛡️ **Error Handling**: Retry logic and comprehensive error handling
-- 📝 **Type Safety**: TypeScript types or Python type hints
-- 🚀 **Production Ready**: Executable immediately after generation
-
-**Setup — Ollama (default):**
-
-1. [Install Ollama](https://ollama.com/download)
-2. Pull a coding model:
-
-   ```bash
-   ollama pull qwen2.5-coder:7b
-   ```
-
-3. The server auto-connects to `http://localhost:11434`
-
-**Setup — HuggingFace Inference Gateway:**
-
-1. Get a HuggingFace token: <https://huggingface.co/settings/tokens>
-2. Set environment variables:
-
-   ```bash
-   export LLM_PROVIDER=huggingface
-   export HF_TOKEN="hf_your_token_here"
-   ```
-
-**Environment Variables:**
-
-- `LLM_PROVIDER` (optional): `ollama` (default) or `huggingface`
-- `OLLAMA_HOST` (optional): Ollama base URL (default: `http://localhost:11434`)
-- `OLLAMA_MODEL` (optional): Ollama model (default: `qwen2.5-coder:7b`)
-- `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` (required for HuggingFace): Your HF API token
-- `HF_MODEL` (optional): HuggingFace model ID (default: `Qwen/Qwen2.5-Coder-32B-Instruct`)
-
-**Example:**
-
-```json
-{
-  "tool": "generate_export_tool",
-  "arguments": {
-    "discoveryId": "discovery_1763346972243_az00w2jd",
-    "toolName": "exportApiData",
-    "language": "typescript",
-    "outputFormat": "json"
-  }
-}
-```
-
-**Example with custom model:**
-
-```json
-{
-  "tool": "generate_export_tool",
-  "arguments": {
-    "discoveryId": "discovery_1763346972243_az00w2jd",
-    "toolName": "exportApiData",
-    "model": "meta-llama/Llama-3.3-70B-Instruct",
-    "language": "python",
-    "outputFormat": "json"
-  }
-}
-```
-
-**Generated Script Usage:**
-
-```bash
-# TypeScript
-tsx data/generated/exportApiData.ts --output export.json --auth YOUR_TOKEN
-
-# Python
-python data/generated/exportApiData.py --output export.json --auth YOUR_TOKEN
-
-# JavaScript
-node data/generated/exportApiData.js --output export.json
-
-# Go
-cd data/generated && go build exportApiData.go && ./exportApiData --output export.json
-```
 
 ### `search_exported_data` ⏳ Planned
 

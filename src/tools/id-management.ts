@@ -35,22 +35,12 @@ export interface IdListResult {
     rateLimitingDetected: boolean;
     timestamp: string;
   }>;
-  generations: Array<{
-    id: string;
-    discoveryId: string;
-    toolName: string;
-    language: string;
-    status: string;
-    timestamp: string;
-  }>;
   summary: {
     totalCaptures: number;
     totalAnalyses: number;
     totalDiscoveries: number;
-    totalGenerations: number;
     availableForAnalysis: number;
     availableForDiscovery: number;
-    availableForGeneration: number;
   };
 }
 
@@ -70,7 +60,6 @@ export class IdManager {
     const captures = this.db.listCapturesBySession(sessionId);
     const analyses = this.db.listAnalysesBySession(sessionId);
     const discoveries = this.db.listDiscoveriesBySession(sessionId);
-    const generations = this.db.listGenerationsBySession(sessionId);
 
     // Calculate availability for next phases within this session
     const capturesWithoutAnalysis = captures.filter(capture => 
@@ -80,11 +69,6 @@ export class IdManager {
     const analysesWithoutDiscovery = analyses.filter(analysis =>
       analysis.status === 'complete' && 
       !discoveries.some(discovery => discovery.analysisId === analysis.id)
-    );
-
-    const discoveriesWithoutGeneration = discoveries.filter(discovery =>
-      discovery.status === 'complete' &&
-      !generations.some(generation => generation.discoveryId === discovery.id)
     );
 
     return {
@@ -115,22 +99,12 @@ export class IdManager {
         rateLimitingDetected: d.rateLimitingDetected,
         timestamp: d.timestamp
       })),
-      generations: generations.map(g => ({
-        id: g.id,
-        discoveryId: g.discoveryId,
-        toolName: g.toolName,
-        language: g.language,
-        status: g.status,
-        timestamp: g.timestamp
-      })),
       summary: {
         totalCaptures: captures.length,
         totalAnalyses: analyses.length,
         totalDiscoveries: discoveries.length,
-        totalGenerations: generations.length,
         availableForAnalysis: capturesWithoutAnalysis.length,
-        availableForDiscovery: analysesWithoutDiscovery.length,
-        availableForGeneration: discoveriesWithoutGeneration.length
+        availableForDiscovery: analysesWithoutDiscovery.length
       }
     };
   }
@@ -145,7 +119,6 @@ export class IdManager {
     const captures = this.db.listCaptures();
     const analyses = this.db.listAnalyses();
     const discoveries = this.db.listDiscoveries();
-    const generations = Object.values(this.db.getData()?.generations || {});
 
     // Calculate availability for next phases
     const capturesWithoutAnalysis = captures.filter(capture => 
@@ -155,11 +128,6 @@ export class IdManager {
     const analysesWithoutDiscovery = analyses.filter(analysis =>
       analysis.status === 'complete' && 
       !discoveries.some(discovery => discovery.analysisId === analysis.id)
-    );
-
-    const discoveriesWithoutGeneration = discoveries.filter(discovery =>
-      discovery.status === 'complete' &&
-      !generations.some(generation => generation.discoveryId === discovery.id)
     );
 
     return {
@@ -190,22 +158,12 @@ export class IdManager {
         rateLimitingDetected: d.rateLimitingDetected,
         timestamp: d.timestamp
       })),
-      generations: generations.map(g => ({
-        id: g.id,
-        discoveryId: g.discoveryId,
-        toolName: g.toolName,
-        language: g.language,
-        status: g.status,
-        timestamp: g.timestamp
-      })),
       summary: {
         totalCaptures: captures.length,
         totalAnalyses: analyses.length,
         totalDiscoveries: discoveries.length,
-        totalGenerations: generations.length,
         availableForAnalysis: capturesWithoutAnalysis.length,
-        availableForDiscovery: analysesWithoutDiscovery.length,
-        availableForGeneration: discoveriesWithoutGeneration.length
+        availableForDiscovery: analysesWithoutDiscovery.length
       }
     };
   }
@@ -216,7 +174,6 @@ export class IdManager {
   public async getNextAvailableIdsForSession(sessionId: string): Promise<{
     capturesReadyForAnalysis: string[];
     analysesReadyForDiscovery: string[];
-    discoveriesReadyForGeneration: string[];
     suggestedNextAction?: string;
   }> {
     const result = await this.listIdsForSession(sessionId);
@@ -231,19 +188,12 @@ export class IdManager {
       .filter(a => !result.discoveries.some(d => d.analysisId === a.id))
       .map(a => a.id);
 
-    const discoveriesReadyForGeneration = result.discoveries
-      .filter(d => d.status === 'complete')
-      .filter(d => !result.generations.some(g => g.discoveryId === d.id))
-      .map(d => d.id);
-
     let suggestedNextAction: string | undefined;
     
     if (capturesReadyForAnalysis.length > 0) {
       suggestedNextAction = `Run analyze_captured_data with captureId: ${capturesReadyForAnalysis[0]}`;
     } else if (analysesReadyForDiscovery.length > 0) {
       suggestedNextAction = `Run discover_api_patterns with analysisId: ${analysesReadyForDiscovery[0]}`;
-    } else if (discoveriesReadyForGeneration.length > 0) {
-      suggestedNextAction = `Run generate_export_tool with discoveryId: ${discoveriesReadyForGeneration[0]}`;
     } else if (result.summary.totalCaptures === 0) {
       suggestedNextAction = `Start by running capture_network_requests with sessionId: ${sessionId}`;
     }
@@ -251,7 +201,6 @@ export class IdManager {
     return {
       capturesReadyForAnalysis,
       analysesReadyForDiscovery,
-      discoveriesReadyForGeneration,
       suggestedNextAction
     };
   }
@@ -263,7 +212,6 @@ export class IdManager {
   public async getNextAvailableIds(): Promise<{
     capturesReadyForAnalysis: string[];
     analysesReadyForDiscovery: string[];
-    discoveriesReadyForGeneration: string[];
     suggestedNextAction?: string;
   }> {
     const result = await this.listAllIds();
@@ -278,19 +226,12 @@ export class IdManager {
       .filter(a => !result.discoveries.some(d => d.analysisId === a.id))
       .map(a => a.id);
 
-    const discoveriesReadyForGeneration = result.discoveries
-      .filter(d => d.status === 'complete')
-      .filter(d => !result.generations.some(g => g.discoveryId === d.id))
-      .map(d => d.id);
-
     let suggestedNextAction: string | undefined;
     
     if (capturesReadyForAnalysis.length > 0) {
       suggestedNextAction = `Run analyze_captured_data with captureId: ${capturesReadyForAnalysis[0]}`;
     } else if (analysesReadyForDiscovery.length > 0) {
       suggestedNextAction = `Run discover_api_patterns with analysisId: ${analysesReadyForDiscovery[0]}`;
-    } else if (discoveriesReadyForGeneration.length > 0) {
-      suggestedNextAction = `Run generate_export_tool with discoveryId: ${discoveriesReadyForGeneration[0]}`;
     } else if (result.summary.totalCaptures === 0) {
       suggestedNextAction = 'Start by running capture_network_requests to capture some traffic';
     }
@@ -298,7 +239,6 @@ export class IdManager {
     return {
       capturesReadyForAnalysis,
       analysesReadyForDiscovery,
-      discoveriesReadyForGeneration,
       suggestedNextAction
     };
   }
@@ -323,7 +263,7 @@ export class IdManager {
    */
   public async validateId(
     id: string, 
-    expectedType: 'capture' | 'analysis' | 'discovery' | 'generation',
+    expectedType: 'capture' | 'analysis' | 'discovery',
     sessionId?: string
   ): Promise<{
     valid: boolean;
@@ -362,15 +302,6 @@ export class IdManager {
           exists = !!discovery;
           correctType = !!discovery;
           status = discovery?.status;
-          break;
-        }
-        
-        case 'generation': {
-          const generations = this.db.getData()?.generations || {};
-          const generation = generations[id];
-          exists = !!generation;
-          correctType = !!generation;
-          status = generation?.status;
           break;
         }
         
@@ -423,7 +354,6 @@ export class IdManager {
     capture?: any;
     analysis?: any;
     discovery?: any;
-    generation?: any;
     chain: string[];
     nextStep?: string;
   }> {
@@ -432,7 +362,6 @@ export class IdManager {
     let capture: any;
     let analysis: any;
     let discovery: any;
-    let generation: any;
     const chain: string[] = [];
 
     // Try to find the starting point
@@ -451,13 +380,6 @@ export class IdManager {
         if (discoveries.length > 0) {
           discovery = discoveries[0];
           chain.push(`discovery:${discovery.id}`);
-          
-          // Find related generation
-          const generations = this.db.getGenerationsByDiscovery(discovery.id);
-          if (generations.length > 0) {
-            generation = generations[0];
-            chain.push(`generation:${generation.id}`);
-          }
         }
       }
     } else {
@@ -475,12 +397,6 @@ export class IdManager {
         if (discoveries.length > 0) {
           discovery = discoveries[0];
           chain.push(`discovery:${discovery.id}`);
-          
-          const generations = this.db.getGenerationsByDiscovery(discovery.id);
-          if (generations.length > 0) {
-            generation = generations[0];
-            chain.push(`generation:${generation.id}`);
-          }
         }
       } else {
         // Try discovery
@@ -496,12 +412,6 @@ export class IdManager {
             chain.push(`analysis:${analysis.id}`);
           }
           chain.push(`discovery:${discovery.id}`);
-          
-          const generations = this.db.getGenerationsByDiscovery(discovery.id);
-          if (generations.length > 0) {
-            generation = generations[0];
-            chain.push(`generation:${generation.id}`);
-          }
         }
       }
     }
@@ -512,15 +422,12 @@ export class IdManager {
       nextStep = `Run analyze_captured_data with captureId: ${capture.id}`;
     } else if (analysis && analysis.status === 'complete' && !discovery) {
       nextStep = `Run discover_api_patterns with analysisId: ${analysis.id}`;
-    } else if (discovery && discovery.status === 'complete' && !generation) {
-      nextStep = `Run generate_export_tool with discoveryId: ${discovery.id}`;
     }
 
     return {
       capture,
       analysis,
       discovery,
-      generation,
       chain,
       nextStep
     };
@@ -583,27 +490,6 @@ export async function handleGetNextSessionIds(input: { sessionId: string }) {
 }
 
 /**
- * Get next available IDs tool handler (DEPRECATED)
- * @deprecated Use handleGetNextSessionIds instead for security
- */
-export async function handleGetNextIds() {
-  console.warn('SECURITY WARNING: getNextIds is deprecated and exposes IDs across all sessions');
-  const idManager = new IdManager();
-  const result = await idManager.getNextAvailableIds();
-
-  return {
-    content: [
-      {
-        type: 'text' as const,
-        text: `⚠️  **SECURITY WARNING**: This tool is deprecated and shows IDs from all sessions.\n\n` +
-             `Please use 'get_next_session_ids' instead with a specific sessionId for security.\n\n` +
-             formatNextIds(result)
-      }
-    ]
-  };
-}
-
-/**
  * Generate new capture session ID tool handler
  */
 export async function handleGenerateSessionId() {
@@ -625,7 +511,7 @@ export async function handleGenerateSessionId() {
  */
 export async function handleValidateId(input: { 
   id: string; 
-  type: 'capture' | 'analysis' | 'discovery' | 'generation';
+  type: 'capture' | 'analysis' | 'discovery';
   sessionId?: string | null;
 }) {
   const sessionId = input.sessionId ?? undefined;
@@ -701,13 +587,11 @@ function formatIdList(result: IdListResult, sessionId?: string): string {
   output += `## Summary\n\n`;
   output += `- **Captures:** ${result.summary.totalCaptures} total\n`;
   output += `- **Analyses:** ${result.summary.totalAnalyses} total\n`;
-  output += `- **Discoveries:** ${result.summary.totalDiscoveries} total\n`;
-  output += `- **Generations:** ${result.summary.totalGenerations} total\n\n`;
+  output += `- **Discoveries:** ${result.summary.totalDiscoveries} total\n\n`;
 
   output += `### Ready for Next Phase\n`;
   output += `- **Ready for Analysis:** ${result.summary.availableForAnalysis} captures\n`;
-  output += `- **Ready for Discovery:** ${result.summary.availableForDiscovery} analyses\n`;
-  output += `- **Ready for Generation:** ${result.summary.availableForGeneration} discoveries\n\n`;
+  output += `- **Ready for Discovery:** ${result.summary.availableForDiscovery} analyses\n\n`;
 
   // Captures
   if (result.captures.length > 0) {
@@ -749,19 +633,6 @@ function formatIdList(result: IdListResult, sessionId?: string): string {
     }
   }
 
-  // Generations
-  if (result.generations.length > 0) {
-    output += `## Generations (${result.generations.length})\n\n`;
-    for (const generation of result.generations) {
-      output += `### ${generation.id}\n`;
-      output += `- **Discovery ID:** ${generation.discoveryId}\n`;
-      output += `- **Tool Name:** ${generation.toolName}\n`;
-      output += `- **Language:** ${generation.language}\n`;
-      output += `- **Status:** ${generation.status}\n`;
-      output += `- **Timestamp:** ${new Date(generation.timestamp).toISOString()}\n\n`;
-    }
-  }
-
   return output;
 }
 
@@ -771,7 +642,6 @@ function formatIdList(result: IdListResult, sessionId?: string): string {
 function formatNextIds(result: {
   capturesReadyForAnalysis: string[];
   analysesReadyForDiscovery: string[];
-  discoveriesReadyForGeneration: string[];
   suggestedNextAction?: string;
 }, sessionId?: string): string {
   let output = sessionId 
@@ -801,16 +671,6 @@ function formatNextIds(result: {
   } else {
     output += `No analyses ready for discovery.\n`;
   }
-  output += `\n`;
-
-  output += `## Ready for Generation (${result.discoveriesReadyForGeneration.length})\n\n`;
-  if (result.discoveriesReadyForGeneration.length > 0) {
-    for (const discoveryId of result.discoveriesReadyForGeneration) {
-      output += `- \`${discoveryId}\` - Run: \`generate_export_tool\`\n`;
-    }
-  } else {
-    output += `No discoveries ready for generation.\n`;
-  }
 
   return output;
 }
@@ -822,7 +682,6 @@ function formatWorkflowChain(result: {
   capture?: any;
   analysis?: any;
   discovery?: any;
-  generation?: any;
   chain: string[];
   nextStep?: string;
 }): string {
@@ -876,14 +735,6 @@ function formatWorkflowChain(result: {
     output += `\n\n`;
   }
 
-  if (result.generation) {
-    output += `## Generation Details\n\n`;
-    output += `- **ID:** ${result.generation.id}\n`;
-    output += `- **Tool Name:** ${result.generation.toolName}\n`;
-    output += `- **Language:** ${result.generation.language}\n`;
-    output += `- **Status:** ${result.generation.status}\n\n`;
-  }
-
   return output;
 }
 
@@ -895,7 +746,7 @@ export function registerIdManagementTools(server: McpServer): void {
   });
   const validateIdSchema = z.object({
     id: z.string().min(1),
-    type: z.enum(['capture', 'analysis', 'discovery', 'generation']),
+    type: z.enum(['capture', 'analysis', 'discovery']),
     sessionId: z.string().nullable().optional()
   });
 
@@ -904,7 +755,7 @@ export function registerIdManagementTools(server: McpServer): void {
     {
       title: 'List Session IDs',
       description:
-        'List all IDs (captures, analyses, discoveries, generations) for a specific session. Secure - only shows your session data.',
+        'List all IDs (captures, analyses, discoveries) for a specific session. Secure - only shows your session data.',
       inputSchema: sessionIdSchema.shape
     },
     async (params) => handleListSessionIds(params)
@@ -963,16 +814,5 @@ export function registerIdManagementTools(server: McpServer): void {
       inputSchema: {}
     },
     async () => handleListAllIds()
-  );
-
-  server.registerTool(
-    'get_next_available_ids',
-    {
-      title: 'Get Next Available IDs (DEPRECATED)',
-      description:
-        '⚠️ DEPRECATED: Use get_next_session_ids instead. This tool shows IDs from all sessions and should not be used in multi-user environments.',
-      inputSchema: {}
-    },
-    async () => handleGetNextIds()
   );
 }

@@ -15,8 +15,7 @@ Build a Model Context Protocol (MCP) server that enables LLMs to:
 
 1. Capture network traffic from any website
 2. Intelligently analyze API patterns and data structures
-3. Automatically generate custom export/scraping tools
-4. Query and search captured data
+3. Query and search captured data
 
 **Key Differentiator:** Generic and reusable, not tied to any specific website or API.
 
@@ -38,7 +37,6 @@ Build a Model Context Protocol (MCP) server that enables LLMs to:
 │  │  • capture_network_requests                          │  │
 │  │  • analyze_captured_data                             │  │
 │  │  • discover_api_patterns                             │  │
-│  │  • generate_export_tool                              │  │
 │  │  • search_exported_data                              │  │
 │  └──────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────────────┐  │
@@ -46,7 +44,6 @@ Build a Model Context Protocol (MCP) server that enables LLMs to:
 │  │  • Browser Automation (Playwright)                   │  │
 │  │  • Network Interceptor                               │  │
 │  │  • Pattern Analyzer                                  │  │
-│  │  • Code Generator (Ollama / HuggingFace)             │  │
 │  │  • Data Storage & Search                             │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
@@ -68,7 +65,6 @@ mcp-network-analyzer/
 │   │   ├── capture.ts           # Network capture tool
 │   │   ├── analyze.ts           # Basic analysis tool
 │   │   ├── discover.ts          # Deep pattern discovery
-│   │   ├── generate.ts          # Code generation tool
 │   │   ├── search.ts            # Data search tool
 │   │   ├── help.ts              # Help & documentation tools
 │   │   ├── id-management.ts     # Session ID tools
@@ -79,7 +75,6 @@ mcp-network-analyzer/
 │   │   ├── interceptor.ts       # Network interception logic
 │   │   ├── analyzer.ts          # Request/response analyzer
 │   │   ├── pattern-matcher.ts   # API pattern recognition
-│   │   ├── code-generator.ts    # AI-powered code generator
 │   │   ├── database.ts          # JSON-based database service
 │   │   ├── storage.ts           # Storage facade
 │   │   ├── local-storage-adapter.ts  # Local filesystem (working)
@@ -88,16 +83,11 @@ mcp-network-analyzer/
 │   │   ├── config.ts            # Environment config
 │   │   └── types.ts             # TypeScript type definitions
 │   │
-│   └── templates/               # Code generation templates
-│       └── export-typescript.hbs
-│
-├── prompts/                     # AI prompt files for code generation
 ├── scripts/                     # Setup & utility scripts
 ├── dist/                        # Compiled JavaScript
 ├── data/                        # Runtime data storage
 │   ├── captures/                # Captured network data (written by tool)
 │   ├── analyses/                # Analysis results (written by tool)
-│   ├── generated/               # Generated tools (written by tool)
 │   └── mcp-analyzer.db.json     # JSON database (captures, analyses, etc.)
 │
 ├── package.json
@@ -148,15 +138,9 @@ mcp-network-analyzer/
 
 ***
 
-### Phase 4: Code Generation ✅ COMPLETE
+### Phase 4: Code Generation — Removed
 
-* [x] Code generator (`src/lib/code-generator.ts`)
-  * Ollama local inference (default: `qwen2.5-coder:7b`)
-  * HuggingFace Inference alternative (set `LLM_PROVIDER=huggingface`)
-* [x] Handlebars template (`src/templates/export-typescript.hbs`)
-* [x] `generate_export_tool` tool (`src/tools/generate.ts`)
-  * Multi-language: TypeScript, Python, JavaScript, Go
-  * Auth injection, pagination, error handling
+Code generation (calling Ollama/HuggingFace to write export scripts from discovered API patterns) has been removed. This responsibility belongs to the host agent/LLM, which already has the structured `discover_api_patterns` output and can generate idiomatic, context-aware code without an extra nested LLM call inside the server.
 
 ***
 
@@ -210,13 +194,9 @@ mcp-network-analyzer/
 3. discover_api_patterns(analysisId)
       ↓ REST pattern detection, pagination, data models
       ↓ saves discoveryId to db
+      ↓ returns structured JSON ready to use or hand to host agent
 
-4. generate_export_tool(discoveryId, toolName, language)
-      ↓ calls Ollama/HuggingFace with patterns as context
-      ↓ renders Handlebars template
-      ↓ saves to data/generated/<toolName>.<ext>
-
-5. search_exported_data(query)
+4. search_exported_data(query)
       ↓ full-text search across all above files
 ```
 

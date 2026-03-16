@@ -39,7 +39,6 @@ import { Storage } from './lib/storage.js';
 import { registerAnalyzeTool } from './tools/analyze.js';
 import { registerCaptureTool } from './tools/capture.js';
 import { registerDiscoverTool } from './tools/discover.js';
-import { registerGenerateTool } from './tools/generate.js';
 import { registerHelpTools } from './tools/help.js';
 import { registerIdManagementTools } from './tools/id-management.js';
 import { registerSearchTool } from './tools/search.js';
@@ -52,7 +51,7 @@ type LogLevel = 'info' | 'warn' | 'error';
 function buildUsageInstructions(): string {
   return [
     'Workflow overview:',
-    '1. capture_network_requests → 2. analyze_captured_data → 3. discover_api_patterns → 4. generate_export_tool → 5. search_exported_data.',
+    '1. capture_network_requests → 2. analyze_captured_data → 3. discover_api_patterns → 4. search_exported_data.',
     'All captured artifacts live under data/. Keep STDOUT clean; use tool responses or STDERR logs for diagnostics.'
   ].join('\n');
 }
@@ -124,7 +123,6 @@ const main = async () => {
   registerCaptureTool(server);
   registerAnalyzeTool(server);
   registerDiscoverTool(server);
-  registerGenerateTool(server);
   registerSearchTool(server);
   registerHelpTools(server);
   registerIdManagementTools(server);

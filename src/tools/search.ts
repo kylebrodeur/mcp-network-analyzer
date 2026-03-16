@@ -21,7 +21,7 @@ interface SearchFilters {
 
 interface SearchMatch {
   id: string;
-  type: 'request' | 'response' | 'analysis' | 'generated';
+  type: 'request' | 'response' | 'analysis';
   captureId: string;
   timestamp: string;
   url?: string;
@@ -72,12 +72,6 @@ export class SearchService {
     // Search analysis results
     const analysisMatches = await this.searchAnalysisData(filters, statusCodes);
     matches.push(...analysisMatches);
-
-    // Search generated tools if query might match code
-    if (this.isCodeQuery(filters.query)) {
-      const generatedMatches = await this.searchGeneratedData(filters);
-      matches.push(...generatedMatches);
-    }
 
     // Sort by timestamp (newest first) and apply limit
     matches.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -250,49 +244,6 @@ export class SearchService {
         }
       } catch (error) {
         console.error(`Error searching analysis ${analysis.id}:`, error);
-      }
-    }
-
-    return matches;
-  }
-
-  /**
-   * Search generated tool files
-   */
-  private async searchGeneratedData(filters: SearchFilters): Promise<SearchMatch[]> {
-    const matches: SearchMatch[] = [];
-    const dataDir = Storage.getDataDirectory();
-    const generatedDir = join(dataDir, 'generated');
-
-    if (!existsSync(generatedDir)) {
-      return matches;
-    }
-
-    const generations = this.db.getData()?.generations || {};
-    
-    for (const generation of Object.values(generations)) {
-      if (!generation.filePath) continue;
-
-      try {
-        const filePath = join(generatedDir, generation.filePath);
-        if (!existsSync(filePath)) continue;
-
-        const fileContent = await readFile(filePath, 'utf-8');
-        
-        if (fileContent.toLowerCase().includes(filters.query.toLowerCase())) {
-          matches.push({
-            id: generation.id,
-            type: 'generated',
-            captureId: '', // Generated tools don't directly map to captures
-            timestamp: generation.timestamp,
-            matchedFields: ['content'],
-            content: {
-              snippet: this.extractSnippet(filters.query, { content: fileContent })
-            }
-          });
-        }
-      } catch (error) {
-        console.error(`Error searching generated file ${generation.filePath}:`, error);
       }
     }
 

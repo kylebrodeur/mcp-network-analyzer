@@ -7,9 +7,15 @@
 import { analyzeCapturedData } from '../dist/tools/analyze.js';
 import { captureNetworkRequests } from '../dist/tools/capture.js';
 import { discoverApiPatterns } from '../dist/tools/discover.js';
+import { DatabaseService } from '../dist/lib/database.js';
+import { Storage } from '../dist/lib/storage.js';
 
 async function test() {
   console.log('🧪 Testing MCP Network Analyzer...\n');
+
+  // Initialize storage and database (required before calling tool functions directly)
+  await Storage.ensureDirectories();
+  await DatabaseService.getInstance().initialize();
 
   try {
     // Test 1: Capture

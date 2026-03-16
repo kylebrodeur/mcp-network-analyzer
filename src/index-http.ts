@@ -41,7 +41,6 @@ import { Storage } from './lib/storage.js';
 import { analyzeCapturedData } from './tools/analyze.js';
 import { captureNetworkRequests } from './tools/capture.js';
 import { discoverApiPatterns } from './tools/discover.js';
-import { generateExportTool } from './tools/generate.js';
 import { getDatabaseStats, listAnalyses, listDiscoveries } from './tools/query.js';
 
 const require = createRequire(import.meta.url);
@@ -53,7 +52,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 function buildUsageInstructions(): string {
   return [
     'Workflow overview:',
-    '1. capture_network_requests → 2. analyze_captured_data → 3. discover_api_patterns → 4. generate_export_tool → 5. search_exported_data.',
+    '1. capture_network_requests → 2. analyze_captured_data → 3. discover_api_patterns → 4. search_exported_data.',
     'All captured artifacts live under data/. Keep STDOUT clean; use tool responses or STDERR logs for diagnostics.'
   ].join('\n');
 }
@@ -313,18 +312,6 @@ async function registerTools(server: McpServer) {
     analysisId: z.string().min(1),
     minConfidence: z.number().min(0).max(1).default(0.5).optional(),
     includeAuthInsights: z.boolean().optional()
-  });
-
-  const generateExportToolSchema = z.object({
-    discoveryId: z.string().min(1),
-    toolName: z.string().min(1),
-    description: z.string().min(1).describe('Description of what the tool does and what data it extracts. This helps the LLM generate better, more contextual code.').optional(),
-    model: z.string().min(1).default('qwen2.5-coder:7b').describe('Model to use. For Ollama: e.g. qwen2.5-coder:7b, codellama:7b. For HuggingFace: e.g. Qwen/Qwen2.5-Coder-32B-Instruct. Set LLM_PROVIDER=huggingface to use HF inference gateway.').optional(),
-    targetUrl: z.string().url().optional(),
-    outputDirectory: z.string().optional(),
-    outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),
-    incremental: z.boolean().optional(),
-    language: z.enum(['typescript', 'python', 'javascript', 'go']).default('typescript').optional()
   });
 
   // Register capture_network_requests tool
@@ -656,88 +643,6 @@ async function registerTools(server: McpServer) {
     }
   );
 
-  server.registerTool(
-    'generate_export_tool',
-    {
-      title: 'Generate Export Tool',
-      description:
-        'Generates runnable export scripts from discovered API patterns. Include a description field to provide context for better code generation. LLMs should provide both toolName and description to help the code generation model create more relevant, contextual code.',
-      inputSchema: generateExportToolSchema.shape
-    },
-    async ({ discoveryId, toolName, description, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
-      try {
-        const result = await generateExportTool({
-          discoveryId,
-          toolName,
-          description,
-          model,
-          targetUrl,
-          outputDirectory,
-          outputFormat,
-          incremental,
-          language
-        });
-
-        if (!result.success) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Failed to generate export tool: ${result.error}`
-              }
-            ],
-            isError: true
-          };
-        }
-
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: [
-                '# 🎉 Export Tool Generated Successfully',
-                '',
-                `**File:** ${result.fileName}`,
-                `**Language:** ${result.language}`,
-                `**Path:** ${result.generatedPath}`,
-                `**Lines of Code:** ${result.linesOfCode}`,
-                result.tokensUsed ? `**Tokens Used:** ${result.tokensUsed}` : '',
-                '',
-                '## 📖 Usage Instructions',
-                '',
-                result.instructions || 'See the generated file for usage instructions.',
-                '',
-                '## ⚠️ Important Notes',
-                '',
-                '1. **Review the code** before running it',
-                '2. **Test with small datasets** first',
-                '3. **Monitor rate limits** to avoid being blocked',
-                '4. **Customize as needed** for your specific use case',
-                '',
-                '## 🚀 Next Steps',
-                '',
-                '1. Review and test the generated export tool',
-                '2. Run it to export data from the target API',
-                '3. Use search_exported_data to query the exported data'
-              ]
-                .filter(line => line !== '')
-                .join('\\n')
-            }
-          ]
-        };
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: `Error generating export tool: ${error instanceof Error ? error.message : String(error)}`
-            }
-          ],
-          isError: true
-        };
-      }
-    }
-  );
 }
 
 main().catch(error => {

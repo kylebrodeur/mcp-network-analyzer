@@ -16,7 +16,6 @@ All 5 core MCP tools are fully implemented and registered. The server is usable 
 | `capture_network_requests` | ✅ Complete | Playwright, stealth mode, session management                  |
 | `analyze_captured_data`    | ✅ Complete | Groups endpoints, detects auth, content-type/status analysis  |
 | `discover_api_patterns`    | ✅ Complete | REST pattern detection, pagination, rate limits, data models  |
-| `generate_export_tool`     | ✅ Complete | Multi-language AI codegen via Ollama (default) or HuggingFace |
 | `search_exported_data`     | ✅ Complete | Full-text search across captures, analyses, generated tools   |
 
 ### Additional Tools (stdio mode only)
@@ -29,7 +28,7 @@ All 5 core MCP tools are fully implemented and registered. The server is usable 
 
 * **Dual transport:** stdio (`src/index.ts`) + HTTP/SSE (`src/index-http.ts`)
 * **Browser automation:** Playwright + stealth config, Chromium installed
-* **Database:** JSON-based (`data/mcp-analyzer.db.json`) — tracks all captures, analyses, discoveries, generations and their relationships
+* **Database:** JSON-based (`data/mcp-analyzer.db.json`) — tracks all captures, analyses, discoveries and their relationships
 * **Local storage:** Fully working — all captured data persists under `data/`
 * **Setup tooling:** `scripts/setup.js` (wizard), `scripts/status.js`, `scripts/install-claude.sh`
 * **TypeScript strict mode:** zero compile errors
@@ -59,6 +58,7 @@ Not published. Package is `private: false` in `package.json` but has never been 
 * **Blaxel deployment** — `blaxel.toml` removed; the Blaxel storage adapter (`src/lib/cloud-storage-adapter.ts`) still exists but is unused
 * **Gradio UI** — the `gradio-ui/` directory and its Python dependencies are gone
 * **Puppeteer** — `puppeteer`, `puppeteer-extra`, and `puppeteer-extra-plugin-stealth` removed from `package.json`; only Playwright is used
+* **Code generation** — `generate_export_tool`, `src/lib/code-generator.ts`, `src/templates/`, `prompts/`, `@huggingface/inference`, and `handlebars` removed; the host agent/LLM handles code generation from the structured `discover_api_patterns` output
 
 ***
 
@@ -71,8 +71,6 @@ Not published. Package is `private: false` in `package.json` but has never been 
 | MCP SDK         | `@modelcontextprotocol/sdk`                                                            |
 | Browser         | Playwright (Chromium)                                                                  |
 | Validation      | Zod v3                                                                                 |
-| Code generation | Ollama local (default: `qwen2.5-coder:7b`) or HuggingFace (`LLM_PROVIDER=huggingface`) |
-| Templates       | Handlebars                                                                             |
 | Storage         | Local JSON files (cloud adapter is stubbed)                                            |
 | HTTP server     | Express.js + SSE streaming                                                             |
 
@@ -84,16 +82,6 @@ Not published. Package is `private: false` in `package.json` but has never been 
 # Storage
 MCP_NETWORK_ANALYZER_DATA=./data   # data directory (default: ./data)
 MCP_STORAGE_MODE=local             # 'local' only works reliably; 'cloud' is stubbed
-
-# Code generation - Ollama (default)
-LLM_PROVIDER=ollama                # default, no extra config needed
-OLLAMA_HOST=http://localhost:11434 # default
-OLLAMA_MODEL=qwen2.5-coder:7b     # default
-
-# Code generation - HuggingFace alternative
-LLM_PROVIDER=huggingface
-HF_TOKEN=hf_...
-HF_MODEL=Qwen/Qwen2.5-Coder-32B-Instruct  # default when using HF
 
 # HTTP server
 PORT=3000

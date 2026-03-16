@@ -47,16 +47,14 @@ The MCP Network Analyzer is a powerful tool for capturing, analyzing, and unders
 - **Capture network traffic** from any website using real browsers
 - **Analyze API patterns** to understand data structures and authentication
 - **Discover relationships** between endpoints and pagination patterns  
-- **Generate export tools** automatically based on discovered patterns
 - **Search and query** captured data efficiently
 
-## 🔄 Five-Phase Workflow
+## 🔄 Four-Phase Workflow
 
 1. **Capture** → Record network traffic from a target website
 2. **Analyze** → Parse requests/responses to understand API structure  
 3. **Discover** → Find patterns, pagination, and data relationships
-4. **Generate** → Create custom export tools based on patterns
-5. **Search** → Query and filter the captured data
+4. **Search** → Query and filter the captured data
 
 ## 🛡️ Security Features
 
@@ -147,34 +145,7 @@ Deep analysis to understand REST patterns, pagination, and relationships between
 
 ---
 
-## Phase 4: Generate Export Tools 🛠️
-
-**Tool:** \`generate_export_tool\`
-
-Creates runnable scripts to extract data from the discovered API patterns.
-
-### Required Parameters:
-- \`discoveryId\`: ID from the discovery phase
-- \`toolName\`: Name for the generated tool
-
-### Optional Parameters:
-- \`description\`: What the tool does (improves code quality)
-- \`language\`: Output language ["typescript", "python", "javascript", "go"]
-- \`outputFormat\`: Data format ["json", "csv", "sqlite"]
-- \`targetUrl\`: Override target URL
-- \`incremental\`: Support incremental data updates
-- \`model\`: LLM model for code generation
-
-**Generated tools include:**
-- Authentication handling
-- Pagination support  
-- Error handling and retries
-- Rate limiting compliance
-- Data transformation and output
-
----
-
-## Phase 5: Search Exported Data 🔍
+## Phase 4: Search Exported Data 🔍
 
 **Tool:** \`search_exported_data\`
 
@@ -244,24 +215,10 @@ Deep analysis to find REST patterns, pagination, and relationships.
 - \`minConfidence\`: Pattern confidence threshold (0.5 default)
 - \`includeAuthInsights\`: Detailed auth analysis (false default)
 
-**Output:** Discovery ID for code generation
+**Output:** Discovery ID for next phase
 
 ---
 
-### 🛠️ generate_export_tool
-Generate runnable export scripts from discovered patterns.
-
-**Parameters:**
-- \`discoveryId\` (required): ID from discovery phase  
-- \`toolName\` (required): Name for generated tool
-- \`description\`: Tool purpose (improves code quality)
-- \`language\`: typescript|python|javascript|go (typescript default)
-- \`outputFormat\`: json|csv|sqlite (json default)
-- \`incremental\`: Support incremental updates (false default)
-
-**Output:** Runnable export script
-
----
 
 ### 🔎 search_exported_data
 Query and filter captured network data.
@@ -292,7 +249,7 @@ Check if an ID exists and validate session access.
 
 **Parameters:**
 - \`id\` (required): ID to validate
-- \`type\` (required): capture|analysis|discovery|generation
+- \`type\` (required): capture|analysis|discovery
 - \`sessionId\`: Validate session access
 
 ### 🔗 get_workflow_chain
@@ -325,7 +282,7 @@ Get help on specific topics.
     return [
       {
         title: "Basic API Discovery Workflow",
-        description: "Complete workflow from capture to code generation for a REST API",
+        description: "Complete workflow from capture to API discovery for a REST API",
         steps: [
           {
             step: 1,
@@ -370,18 +327,6 @@ Get help on specific topics.
               analysisId: "analysis_1234567890_def456"
             },
             example: "Discovers pagination and CRUD patterns"
-          },
-          {
-            step: 6,
-            tool: "generate_export_tool",
-            description: "Generate a data export tool",
-            parameters: {
-              discoveryId: "discovery_1234567890_ghi789",
-              toolName: "user-data-exporter",
-              description: "Export user profiles and activity data",
-              language: "typescript"
-            },
-            example: "Creates a runnable TypeScript export script"
           }
         ]
       },
@@ -415,18 +360,6 @@ Get help on specific topics.
             parameters: {
               analysisId: "analysis_id_from_step2",
               minConfidence: 0.7
-            }
-          },
-          {
-            step: 4,
-            tool: "generate_export_tool", 
-            description: "Create product data exporter",
-            parameters: {
-              discoveryId: "discovery_id_from_step3",
-              toolName: "product-catalog-exporter",
-              description: "Export product names, prices, descriptions, and availability",
-              outputFormat: "csv",
-              language: "python"
             }
           }
         ]
@@ -464,7 +397,7 @@ Get help on specific topics.
 
 **Security Notes:**
 - Captured auth tokens are stored locally only
-- No data is sent to external services (except for code generation)
+- No data is sent to external services
 - Review generated tools before running them
 
 ## 🎯 Rate Limiting and Ethics
@@ -484,7 +417,7 @@ Get help on specific topics.
 
 **Local Storage:**
 - All data stored locally in \`data/\` directory
-- No data transmitted except for LLM code generation
+- No data transmitted externally
 - You control what data to capture and analyze
 
 **Generated Tools:**
@@ -666,24 +599,16 @@ cat data/analyses/discovery_*/discovery.json | jq '.patterns[0]'
     const captures = this.db.listCapturesBySession(sessionId);
     const analyses = this.db.listAnalysesBySession(sessionId);
     const discoveries = this.db.listDiscoveriesBySession(sessionId);
-    const generations = this.db.listGenerationsBySession(sessionId);
 
     let suggestions: string[] = [];
     let currentPhase = "None";
 
-    if (generations.length > 0) {
+    if (discoveries.length > 0) {
       currentPhase = "Complete";
       suggestions = [
-        "🎉 Workflow complete! You can now run your generated export tool.",
-        "💡 Use `search_exported_data` to query the captured data.",
+        "🎉 Workflow complete! Use `search_exported_data` to query the captured data.",
+        "💡 Use `discover_api_patterns` again on other analyses for more patterns.",
         "🔄 Start a new session with `generate_session_id` for different data."
-      ];
-    } else if (discoveries.length > 0) {
-      currentPhase = "Ready for Generation";
-      suggestions = [
-        "🛠️ Generate an export tool with `generate_export_tool`",
-        "📝 Provide a detailed description for better code generation",
-        "🎯 Choose the right language and output format for your needs"
       ];
     } else if (analyses.length > 0) {
       currentPhase = "Ready for Discovery";
@@ -720,7 +645,6 @@ cat data/analyses/discovery_*/discovery.json | jq '.patterns[0]'
 - **Captures:** ${captures.length} (${captures.filter(c => c.status === 'complete').length} complete)
 - **Analyses:** ${analyses.length} (${analyses.filter(a => a.status === 'complete').length} complete)
 - **Discoveries:** ${discoveries.length} (${discoveries.filter(d => d.status === 'complete').length} complete)
-- **Generated Tools:** ${generations.length} (${generations.filter(g => g.status === 'complete').length} complete)
 
 ## 🎯 Next Steps
 

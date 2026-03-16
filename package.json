@@ -1,7 +1,7 @@
 {
   "name": "mcp-network-analyzer",
   "version": "0.1.0",
-  "description": "MCP server for intelligent network request analysis and automated tool generation",
+  "description": "MCP server for intelligent network request capture, analysis, and API pattern discovery",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -33,16 +33,13 @@
   "license": "MIT",
   "packageManager": "pnpm@10.21.0",
   "dependencies": {
-    "@huggingface/inference": "^4.13.3",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "express": "^5.1.0",
-    "handlebars": "^4.7.8",
     "playwright": "^1.56.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/express": "^5.0.5",
-    "@types/handlebars": "^4.1.0",
     "@types/node": "^24.10.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"

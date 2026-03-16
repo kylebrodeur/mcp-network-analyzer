@@ -5,9 +5,15 @@
 
 import { analyzeCapturedData } from '../dist/tools/analyze.js';
 import { discoverApiPatterns } from '../dist/tools/discover.js';
+import { DatabaseService } from '../dist/lib/database.js';
+import { Storage } from '../dist/lib/storage.js';
 
 async function main() {
   console.log('🧪 Testing Analysis Tools\n');
+
+  // Initialize storage and database (required before calling tool functions directly)
+  await Storage.ensureDirectories();
+  await DatabaseService.getInstance().initialize();
 
   // Test 1: Analyze captured data
   console.log('📊 Test 1: Analyzing captured data...');

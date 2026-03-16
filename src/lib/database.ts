@@ -46,24 +46,10 @@ interface DiscoveryRecord {
   createdAt: string;
 }
 
-interface GenerationRecord {
-  id: string;
-  discoveryId: string;
-  toolName: string;
-  language: string;
-  timestamp: string;
-  status: 'processing' | 'complete' | 'failed';
-  filePath?: string;
-  linesOfCode?: number;
-  tokensUsed?: number;
-  createdAt: string;
-}
-
 interface DatabaseData {
   captures: Record<string, CaptureRecord>;
   analyses: Record<string, AnalysisRecord>;
   discoveries: Record<string, DiscoveryRecord>;
-  generations: Record<string, GenerationRecord>;
   metadata: {
     version: string;
     lastUpdated: string;
@@ -124,7 +110,6 @@ export class DatabaseService {
     if (!this.data.captures) this.data.captures = {};
     if (!this.data.analyses) this.data.analyses = {};
     if (!this.data.discoveries) this.data.discoveries = {};
-    if (!this.data.generations) this.data.generations = {};
     if (!this.data.metadata) {
       this.data.metadata = {
         version: '1.0.0',
@@ -141,7 +126,6 @@ export class DatabaseService {
       captures: {},
       analyses: {},
       discoveries: {},
-      generations: {},
       metadata: {
         version: '1.0.0',
         lastUpdated: new Date().toISOString()
@@ -250,46 +234,6 @@ export class DatabaseService {
   }
 
   /**
-   * Generate a unique generation ID and create record
-   */
-  public async createGeneration(discoveryId: string, toolName: string, language: string): Promise<string> {
-    if (!this.data) throw new Error('Database not initialized');
-
-    const generationId = `generation_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-    const now = new Date().toISOString();
-    
-    this.data.generations[generationId] = {
-      id: generationId,
-      discoveryId,
-      toolName,
-      language,
-      timestamp: now,
-      status: 'processing',
-      createdAt: now
-    };
-
-    await this.saveData();
-    return generationId;
-  }
-
-  /**
-   * Update generation record with results
-   */
-  public async updateGeneration(id: string, data: Partial<GenerationRecord>): Promise<void> {
-    if (!this.data) throw new Error('Database not initialized');
-
-    const existing = this.data.generations[id];
-    if (!existing) {
-      throw new Error(`Generation ${id} not found`);
-    }
-
-    // Update fields
-    Object.assign(existing, data);
-    
-    await this.saveData();
-  }
-
-  /**
    * Get analysis by ID
    */
   public getAnalysis(id: string): AnalysisRecord | null {
@@ -335,7 +279,6 @@ export class DatabaseService {
       captures: Object.keys(this.data.captures).length,
       analyses: Object.keys(this.data.analyses).length,
       discoveries: Object.keys(this.data.discoveries).length,
-      generations: Object.keys(this.data.generations).length,
       lastUpdated: this.data.metadata.lastUpdated,
       version: this.data.metadata.version
     };
@@ -464,17 +407,6 @@ export class DatabaseService {
   }
 
   /**
-   * Get generations for a specific discovery
-   */
-  public getGenerationsByDiscovery(discoveryId: string): GenerationRecord[] {
-    if (!this.data) throw new Error('Database not initialized');
-    
-    return Object.values(this.data.generations)
-      .filter(generation => generation.discoveryId === discoveryId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
-
-  /**
    * Clear all data (for testing)
    */
   public async clear(): Promise<void> {
@@ -518,19 +450,6 @@ export class DatabaseService {
       }
     }
 
-    // Check if it's a generation ID
-    const generation = this.data.generations[id];
-    if (generation) {
-      const parentDiscovery = this.data.discoveries[generation.discoveryId];
-      if (parentDiscovery) {
-        const parentAnalysis = this.data.analyses[parentDiscovery.analysisId];
-        if (parentAnalysis) {
-          const parentCapture = this.data.captures[parentAnalysis.captureId];
-          return parentCapture?.sessionId || null;
-        }
-      }
-    }
-
     return null;
   }
 
@@ -571,27 +490,6 @@ export class DatabaseService {
         if (analysis) {
           const capture = this.data!.captures[analysis.captureId];
           return capture?.sessionId === sessionId;
-        }
-        return false;
-      })
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
-
-  /**
-   * List generations filtered by session ID
-   */
-  public listGenerationsBySession(sessionId: string): GenerationRecord[] {
-    if (!this.data) throw new Error('Database not initialized');
-    
-    return Object.values(this.data.generations)
-      .filter(generation => {
-        const discovery = this.data!.discoveries[generation.discoveryId];
-        if (discovery) {
-          const analysis = this.data!.analyses[discovery.analysisId];
-          if (analysis) {
-            const capture = this.data!.captures[analysis.captureId];
-            return capture?.sessionId === sessionId;
-          }
         }
         return false;
       })
