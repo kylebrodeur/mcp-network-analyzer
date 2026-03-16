@@ -24,3 +24,6 @@ data/analyses/*
 !data/analyses/.gitkeep
 data/generated/*
 !data/generated/.gitkeep
+
+# Perplexity exporter (published as separate repo)
+perplexity-exporter/
