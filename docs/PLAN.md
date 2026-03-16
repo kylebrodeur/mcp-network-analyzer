@@ -2,7 +2,7 @@
 
 **Project:** Generic MCP Server for Network Request Analysis & Website Tool Building
 **Created:** November 15, 2025
-**Updated:** March 15, 2026
+**Updated:** March 16, 2026
 **Status:** All core phases complete
 
 > For current component status and environment setup, see [PROJECT_STATUS.md](PROJECT_STATUS.md).
@@ -108,7 +108,7 @@ mcp-network-analyzer/
 * [x] Install dependencies (Playwright, Zod)
 * [x] Create directory structure
 * [x] Implement MCP server initialization (`src/index.ts`, `src/index-http.ts`)
-* [x] Register all 5 tool schemas with Zod validation
+* [x] Register all 4 tool schemas with Zod validation
 * [x] Configure VS Code workspace
 * [x] Implement graceful shutdown and error handling
 * [x] Create browser automation wrapper (`src/lib/browser.ts`)
@@ -214,4 +214,4 @@ Code generation (calling Ollama/HuggingFace to write export scripts from discove
 
 ***
 
-*Last updated: January 2025*
+*Last updated: March 16, 2026*

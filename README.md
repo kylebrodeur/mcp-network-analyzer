@@ -137,47 +137,18 @@ pnpm run build
 
 ## Storage Modes
 
-MCP Network Analyzer supports two storage modes:
-
 ### Local Mode (Default)
-Stores all captured data in local file system.
+Stores all captured data in the local file system under `data/`.
 
 ```bash
 # Default: uses ./data directory
-MCP_STORAGE_MODE=local node dist/index.js
+node dist/index.js
 
 # Custom local directory
-MCP_STORAGE_MODE=local MCP_NETWORK_ANALYZER_DATA=/path/to/data node dist/index.js
+MCP_NETWORK_ANALYZER_DATA=/path/to/data node dist/index.js
 ```
 
-### Cloud Mode
-Stores captured data in cloud storage (AWS S3, Google Cloud Storage, Azure Blob, etc.).
-
-```bash
-# AWS S3 example
-MCP_STORAGE_MODE=cloud \
-MCP_CLOUD_PROVIDER=aws-s3 \
-MCP_CLOUD_BUCKET=my-bucket \
-MCP_CLOUD_REGION=us-east-1 \
-MCP_CLOUD_ACCESS_KEY_ID=your-access-key \
-MCP_CLOUD_SECRET_ACCESS_KEY=your-secret-key \
-node dist/index.js
-```
-
-**Supported Cloud Providers:**
-- `aws-s3` - Amazon S3
-- `gcp-storage` - Google Cloud Storage
-- `azure-blob` - Azure Blob Storage
-- `custom` - Custom S3-compatible endpoint
-
-**Cloud Configuration Environment Variables:**
-- `MCP_STORAGE_MODE` - Set to `cloud` for cloud storage
-- `MCP_CLOUD_PROVIDER` - Cloud storage provider
-- `MCP_CLOUD_BUCKET` - Bucket/container name
-- `MCP_CLOUD_REGION` - Region (AWS/GCP)
-- `MCP_CLOUD_ENDPOINT` - Custom endpoint URL (for S3-compatible services)
-- `MCP_CLOUD_ACCESS_KEY_ID` - Access key/credential
-- `MCP_CLOUD_SECRET_ACCESS_KEY` - Secret key/credential
+> **Note:** Cloud storage (S3/GCS/Azure) is not yet implemented. The cloud adapter interface exists but upload/download methods are stubs. Only local mode works reliably.
 
 ## Transport Modes
 
@@ -196,10 +167,10 @@ For remote MCP connections and self-hosted deployments. Uses Express.js with Ser
 
 ```bash
 # Start HTTP server (default port 3000)
-pnpm run start:http
+node dist/index-http.js
 
 # Development mode with watch
-pnpm run dev:http
+pnpm run dev
 
 # Custom port
 PORT=3001 node dist/index-http.js
@@ -224,33 +195,12 @@ npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport stream
 
 Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
-### Local Mode (Default)
 ```json
 {
   "mcpServers": {
     "network-analyzer": {
       "command": "node",
-      "args": ["/Users/kylebrodeur/mcp-network-analyzer/dist/index.js"]
-    }
-  }
-}
-```
-
-### Cloud Mode (AWS S3)
-```json
-{
-  "mcpServers": {
-    "network-analyzer": {
-      "command": "node",
-      "args": ["/Users/kylebrodeur/mcp-network-analyzer/dist/index.js"],
-      "env": {
-        "MCP_STORAGE_MODE": "cloud",
-        "MCP_CLOUD_PROVIDER": "aws-s3",
-        "MCP_CLOUD_BUCKET": "my-bucket",
-        "MCP_CLOUD_REGION": "us-east-1",
-        "MCP_CLOUD_ACCESS_KEY_ID": "your-access-key",
-        "MCP_CLOUD_SECRET_ACCESS_KEY": "your-secret-key"
-      }
+      "args": ["/path/to/mcp-network-analyzer/dist/index.js"]
     }
   }
 }
@@ -314,8 +264,9 @@ The captured data will include:
 **Current Features:**
 
 - Full network traffic capture with Playwright
-- Multi-mode storage: local, cloud (S3/GCS/Azure)
+- Local file storage with JSON database
 - REST pattern detection, authentication discovery, pagination and rate limit analysis
+- Full-text search across all captured data
 
 See [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for detailed roadmap.
 
@@ -373,9 +324,9 @@ Deep analysis of API structure with pattern recognition.
 
 **Returns:** Detailed API patterns, data models, and extraction strategies
 
-### `search_exported_data` ⏳ Planned
+### `search_exported_data` ✅ Implemented
 
-Search through previously exported data.
+Search through previously captured and analyzed data.
 
 **Parameters:**
 
@@ -433,22 +384,12 @@ The Inspector will:
 
 ### With Environment Variables
 
-Pass environment variables for cloud or Blaxel storage:
+Pass environment variables for custom storage paths:
 
 ```bash
-# Cloud storage (AWS S3)
+# Custom data directory
 npx @modelcontextprotocol/inspector \
-  -e MCP_STORAGE_MODE=cloud \
-  -e MCP_CLOUD_PROVIDER=aws-s3 \
-  -e MCP_CLOUD_BUCKET=my-bucket \
-  -e MCP_CLOUD_REGION=us-east-1 \
-  node dist/index.js
-
-# Blaxel hosting
-npx @modelcontextprotocol/inspector \
-  -e MCP_STORAGE_MODE=blaxel \
-  -e BLAXEL_PROJECT_ID=your-project-id \
-  -e BLAXEL_API_KEY=your-api-key \
+  -e MCP_NETWORK_ANALYZER_DATA=/path/to/data \
   node dist/index.js
 ```
 
@@ -480,15 +421,15 @@ npx @modelcontextprotocol/inspector --cli node dist/index.js \
 pnpm install
 
 # Run in development mode (with watch)
-pnpm run dev          # stdio mode
-pnpm run dev:http     # HTTP mode
+pnpm run dev          # HTTP mode (default)
+pnpm run dev:stdio    # stdio mode
 
 # Build
 pnpm run build
 
 # Start production servers
 node dist/index.js         # stdio mode
-pnpm run start:http        # HTTP mode
+node dist/index-http.js    # HTTP mode (port 3000)
 
 # Type check
 pnpm run type-check
@@ -507,13 +448,11 @@ src/
 │   ├── capture.ts        # Network capture tool
 │   ├── analyze.ts        # Analysis tool
 │   ├── discover.ts       # Pattern discovery tool
-│   ├── generate.ts       # Code generation tool
 │   └── search.ts         # Data search tool
 └── lib/
     ├── browser.ts        # Browser automation utilities
     ├── analyzer.ts       # Request/response analysis
-    ├── pattern-matcher.ts # API pattern recognition
-    └── code-generator.ts  # Tool generation engine
+    └── pattern-matcher.ts # API pattern recognition
 ```
 
 ## License

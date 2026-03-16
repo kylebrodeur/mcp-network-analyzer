@@ -26,8 +26,7 @@
     "network-analysis",
     "api-discovery",
     "web-scraping",
-    "browser-automation",
-    "code-generation"
+    "browser-automation"
   ],
   "author": "kylebrodeur",
   "license": "MIT",

@@ -1,13 +1,13 @@
 # MCP Network Analyzer - Project Status
 
-**Last Updated:** March 15, 2026
+**Last Updated:** March 16, 2026
 **Current Phase:** All core phases complete — MCP server fully functional
 
 ***
 
 ## What's Done
 
-All 5 core MCP tools are fully implemented and registered. The server is usable locally today via Claude Desktop or MCP Inspector.
+All 4 core MCP tools are fully implemented and registered. The server is usable locally today via Claude Desktop or MCP Inspector.
 
 ### MCP Tools
 
@@ -16,7 +16,7 @@ All 5 core MCP tools are fully implemented and registered. The server is usable 
 | `capture_network_requests` | ✅ Complete | Playwright, stealth mode, session management                  |
 | `analyze_captured_data`    | ✅ Complete | Groups endpoints, detects auth, content-type/status analysis  |
 | `discover_api_patterns`    | ✅ Complete | REST pattern detection, pagination, rate limits, data models  |
-| `search_exported_data`     | ✅ Complete | Full-text search across captures, analyses, generated tools   |
+| `search_exported_data`     | ✅ Complete | Full-text search across captures and analyses              |
 
 ### Additional Tools (stdio mode only)
 
