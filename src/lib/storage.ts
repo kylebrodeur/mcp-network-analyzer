@@ -4,11 +4,11 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { CaptureSession, StorageResult } from './types.js';
-import type { IStorageAdapter } from './storage-adapter.js';
-import { LocalStorageAdapter } from './local-storage-adapter.js';
 import { CloudStorageAdapter } from './cloud-storage-adapter.js';
 import { Config } from './config.js';
+import { LocalStorageAdapter } from './local-storage-adapter.js';
+import type { IStorageAdapter } from './storage-adapter.js';
+import type { CaptureSession, StorageResult } from './types.js';
 
 /**
  * Storage facade that delegates to the appropriate adapter

@@ -4,6 +4,7 @@ dist/
 .env
 .env.profiles.json
 .DS_Store
+mcp.json
 
 # Browser data
 browser-data/

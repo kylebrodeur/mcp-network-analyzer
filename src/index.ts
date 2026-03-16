@@ -149,7 +149,7 @@ const registerPlaceholderTools = () => {
     {
       title: 'Capture Network Requests',
       description:
-        'Launches a Playwright/Puppeteer session, persists auth if requested, and records HTTP traffic into data/captures/. A unique sessionId is automatically generated if not provided.',
+        'Launches a Playwright session, persists auth if requested, and records HTTP traffic into data/captures/. A unique sessionId is automatically generated if not provided.',
       inputSchema: captureNetworkRequestsSchema.shape
     },
     async ({ url, waitForNetworkIdleMs, sessionId, includeResourceTypes, excludeResourceTypes, ignoreStaticAssets }) => {

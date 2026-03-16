@@ -32,4 +32,4 @@ These instructions tell GitHub Copilot (and other codegen agents) how to collabo
 ## Documentation
 
 - Active documentation is in `/README.md`, `/docs/PROJECT_STATUS.md`, `/docs/PLAN.md`, `/docs/DUAL_MODE_ARCHITECTURE.md`, and `/docs/BLAXEL_INTEGRATION.md`.
-- **Ignore archived documentation:** Files in `/docs/archive/` are historical and should not be referenced for current implementation decisions.
+- **Ignore archived documentation:** Files in `/docs/_archive/` are historical and should not be referenced for current implementation decisions.

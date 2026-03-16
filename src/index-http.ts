@@ -333,7 +333,7 @@ async function registerTools(server: McpServer) {
     {
       title: 'Capture Network Requests',
       description:
-        'Launches a Playwright/Puppeteer session, persists auth if requested, and records HTTP traffic into data/captures/.',
+        'Launches a Playwright session, persists auth if requested, and records HTTP traffic into data/captures/.',
       inputSchema: captureNetworkRequestsSchema.shape
     },
     async ({ url, waitForNetworkIdleMs, sessionId, includeResourceTypes, excludeResourceTypes, ignoreStaticAssets }) => {
