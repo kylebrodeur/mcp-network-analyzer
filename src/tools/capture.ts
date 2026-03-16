@@ -3,6 +3,8 @@
  * Orchestrates browser automation, network interception, and data storage
  */
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { BrowserManager } from '../lib/browser.js';
 import { DatabaseService } from '../lib/database.js';
 import { NetworkInterceptor } from '../lib/interceptor.js';
@@ -307,4 +309,101 @@ function createSearchableContent(item: any): string {
   if (item.mimeType) searchableFields.push(item.mimeType);
   
   return searchableFields.join(' ').toLowerCase();
+}
+
+export function registerCaptureTool(server: McpServer): void {
+  server.registerTool(
+    'capture_network_requests',
+    {
+      title: 'Capture Network Requests',
+      description:
+        'Launches a Playwright session, persists auth if requested, and records HTTP traffic into data/captures/. A unique sessionId is automatically generated if not provided.',
+      inputSchema: z.object({
+        url: z.string().url(),
+        waitForNetworkIdleMs: z.number().int().positive().max(120000).optional(),
+        sessionId: z.string().min(1).nullable().optional(),
+        includeResourceTypes: z.array(z.string()).nullable().optional(),
+        excludeResourceTypes: z.array(z.string()).nullable().optional(),
+        ignoreStaticAssets: z.boolean().optional()
+      }).shape
+    },
+    async ({ url, waitForNetworkIdleMs, sessionId, includeResourceTypes, excludeResourceTypes, ignoreStaticAssets }) => {
+      try {
+        const result = await captureNetworkRequests({
+          url,
+          waitForNetworkIdleMs,
+          sessionId: sessionId ?? undefined,
+          includeResourceTypes: includeResourceTypes ?? undefined,
+          excludeResourceTypes: excludeResourceTypes ?? undefined,
+          ignoreStaticAssets
+        });
+
+        if (!result.success) {
+          return {
+            content: [{ type: 'text' as const, text: `Failed to capture network requests: ${result.error}` }],
+            isError: true
+          };
+        }
+
+        const { analysis } = result;
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# Network Capture Complete',
+                '',
+                `**Capture ID:** ${result.captureId}`,
+                `**Target URL:** ${url}`,
+                `**Total Requests:** ${result.totalRequests}`,
+                `**Total Responses:** ${result.totalResponses}`,
+                '',
+                '## 📊 Request Type Breakdown',
+                ...Object.entries(analysis.requestTypeBreakdown).map(
+                  ([type, count]) => `- ${type}: ${count}`
+                ),
+                '',
+                '## 🌐 Domains Accessed',
+                ...result.domains.map(domain => `- ${domain}`),
+                '',
+                '## 🔌 API Endpoints Discovered',
+                analysis.apiEndpoints.length > 0
+                  ? analysis.apiEndpoints
+                      .map(ep => `- ${ep.method} ${ep.url}${ep.hasBody ? ' (with body)' : ''}`)
+                      .join('\n')
+                  : '- No API endpoints detected (only static resources)',
+                '',
+                '## 🔐 Authentication Analysis',
+                `**Cookie-based:** ${analysis.authenticationHints.cookieBased ? 'Yes' : 'No'}`,
+                analysis.authenticationHints.cookies.length > 0
+                  ? `**Cookies detected:** ${analysis.authenticationHints.cookies.slice(0, 5).join(', ')}${analysis.authenticationHints.cookies.length > 5 ? ` (+${analysis.authenticationHints.cookies.length - 5} more)` : ''}`
+                  : '',
+                analysis.authenticationHints.customHeaders.length > 0
+                  ? `**Custom headers:** ${analysis.authenticationHints.customHeaders.join(', ')}`
+                  : '',
+                `**Bearer token:** ${analysis.authenticationHints.bearerToken ? 'Yes' : 'No'}`,
+                '',
+                '## 📁 Data Saved',
+                `- Complete session: ${result.sessionPath}/session.json`,
+                `- Requests: ${result.sessionPath}/requests.json`,
+                `- Responses: ${result.sessionPath}/responses.json`,
+                `- Metadata: ${result.sessionPath}/metadata.json`,
+                '',
+                '## 🎯 Recommended Next Steps',
+                ...analysis.suggestedNextSteps.map((step, i) => `${i + 1}. ${step}`)
+              ]
+                .filter(line => line !== '')
+                .join('\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error capturing network requests: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true
+        };
+      }
+    }
+  );
 }

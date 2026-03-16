@@ -2,9 +2,11 @@
  * Search exported data tool - queries captured traffic and analysis results
  */
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { z } from 'zod';
 import { DatabaseService } from '../lib/database.js';
 import { Storage } from '../lib/storage.js';
 import type { CapturedRequest, CapturedResponse } from '../lib/types.js';
@@ -528,4 +530,28 @@ function formatSearchResults(results: SearchResults): string {
   }
 
   return output;
+}
+
+export function registerSearchTool(server: McpServer): void {
+  server.registerTool(
+    'search_exported_data',
+    {
+      title: 'Search Exported Data',
+      description:
+        'Queries captured or generated artifacts via filters (status codes, domains, time ranges, and free-text search).',
+      inputSchema: z.object({
+        query: z.string().min(1),
+        captureId: z.string().nullable().optional(),
+        statusCode: z.union([z.number().int(), z.array(z.number().int())]).nullable().optional(),
+        limit: z.number().int().positive().max(1000).default(100).optional(),
+        includeResponses: z.boolean().optional()
+      }).shape
+    },
+    async (params) => {
+      return handleSearchExportedData({
+        ...params,
+        captureId: params.captureId ?? undefined
+      });
+    }
+  );
 }

@@ -3,6 +3,8 @@
  * Provides comprehensive guidance on usage, workflow, and best practices
  */
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { DatabaseService } from '../lib/database.js';
 
 export interface HelpSection {
@@ -894,4 +896,46 @@ Ready to explore? Start with \`generate_session_id\`!
       }
     ]
   };
+}
+export function registerHelpTools(server: McpServer): void {
+  server.registerTool(
+    'get_help',
+    {
+      title: 'Get Help and Documentation',
+      description:
+        'Get comprehensive help on using the MCP Network Analyzer. Specify a topic for detailed guidance.',
+      inputSchema: z.object({
+        topic: z.enum(['overview', 'workflow', 'tools', 'examples', 'security', 'troubleshooting']).nullable().optional()
+      }).shape
+    },
+    async (params: { topic?: string | null }) => {
+      return handleGetHelp(params);
+    }
+  );
+
+  server.registerTool(
+    'get_contextual_help',
+    {
+      title: 'Get Contextual Help',
+      description:
+        'Get help and next step suggestions based on your current session state.',
+      inputSchema: z.object({ sessionId: z.string().min(1) }).shape
+    },
+    async (params) => {
+      return handleGetContextualHelp(params);
+    }
+  );
+
+  server.registerTool(
+    'get_quick_start',
+    {
+      title: 'Quick Start Guide',
+      description:
+        'Get a quick start guide to begin using the MCP Network Analyzer in 5 minutes.',
+      inputSchema: {}
+    },
+    async () => {
+      return handleGetQuickStart();
+    }
+  );
 }

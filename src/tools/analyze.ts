@@ -3,8 +3,10 @@
  * Analyzes captured network data to extract insights and patterns
  */
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { z } from 'zod';
 import { AnalysisSummary, NetworkAnalyzer } from "../lib/analyzer.js";
 import { DatabaseService } from "../lib/database.js";
 import { Storage } from "../lib/storage.js";
@@ -221,4 +223,111 @@ function generateRecommendations(analysis: AnalysisSummary, analysisId: string):
   recommendations.push(`📊 Or use 'get_next_available_ids' to see all available IDs`);
 
   return recommendations;
+}
+
+export function registerAnalyzeTool(server: McpServer): void {
+  server.registerTool(
+    'analyze_captured_data',
+    {
+      title: 'Analyze Captured Data',
+      description:
+        'Parses captured JSON files to extract request groups, authentication hints, and response metadata.',
+      inputSchema: z.object({
+        captureId: z.string().min(1),
+        includeStaticAssets: z.boolean().default(false).optional(),
+        outputPath: z.string().nullable().optional()
+      }).shape
+    },
+    async ({ captureId, includeStaticAssets, outputPath }) => {
+      try {
+        const result = await analyzeCapturedData({
+          captureId,
+          includeStaticAssets,
+          outputPath: outputPath ?? undefined
+        });
+
+        if (!result.success) {
+          return {
+            content: [{ type: 'text' as const, text: `Failed to analyze captured data: ${result.error}` }],
+            isError: true
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# Network Analysis Complete',
+                '',
+                `**Analysis ID:** ${result.analysisId}`,
+                `**Capture ID:** ${captureId}`,
+                '',
+                '## 📊 Summary',
+                `- Total Requests: ${result.summary.totalRequests}`,
+                `- Total Responses: ${result.summary.totalResponses}`,
+                `- API Endpoints: ${result.summary.apiEndpoints}`,
+                `- Static Assets: ${result.summary.staticAssets}`,
+                `- Errors (4xx/5xx): ${result.summary.errorCount}`,
+                '',
+                '## 🌐 Domains',
+                ...result.summary.domains.map(domain => `- ${domain}`),
+                '',
+                '## 🔌 Endpoint Groups',
+                result.endpointGroups.length > 0
+                  ? result.endpointGroups
+                      .slice(0, 10)
+                      .map(
+                        group =>
+                          `- ${group.method} ${group.pathPattern} (${group.count} calls)\n  Example: ${group.exampleUrl}`
+                      )
+                      .join('\n')
+                  : '- No API endpoints detected',
+                result.endpointGroups.length > 10
+                  ? `\n... and ${result.endpointGroups.length - 10} more groups`
+                  : '',
+                '',
+                '## 🔐 Authentication',
+                `- Method: ${result.authentication.method}`,
+                `- Confidence: ${Math.round(result.authentication.confidence * 100)}%`,
+                result.authentication.headers.length > 0
+                  ? `- Auth Headers: ${result.authentication.headers.join(', ')}`
+                  : '',
+                `- Has Cookies: ${result.authentication.hasCookies ? 'Yes' : 'No'}`,
+                '',
+                '## 📦 Content Types',
+                ...Object.entries(result.contentTypes)
+                  .sort(([, a], [, b]) => (b as number) - (a as number))
+                  .slice(0, 5)
+                  .map(([type, count]) => `- ${type}: ${count}`),
+                '',
+                '## 📈 Status Codes',
+                ...Object.entries(result.statusCodes)
+                  .sort(([, a], [, b]) => (b as number) - (a as number))
+                  .map(([code, count]) => `- ${code}: ${count}`),
+                '',
+                '## 💡 Recommendations',
+                ...result.recommendations.map((rec, i) => `${i + 1}. ${rec}`),
+                '',
+                '## 📁 Analysis Saved',
+                `Path: ${result.analysisPath}`,
+                '',
+                '## 📊 Raw Data (JSON)',
+                '```json',
+                JSON.stringify(result, null, 2),
+                '```'
+              ]
+                .filter(line => line !== '')
+                .join('\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error analyzing captured data: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true
+        };
+      }
+    }
+  );
 }

@@ -3,8 +3,10 @@
  * Uses Claude API for intelligent code generation
  */
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { z } from 'zod';
 import { CodeGenerator, type CodeGenerationOptions } from "../lib/code-generator.js";
 import { DatabaseService } from "../lib/database.js";
 import type { APIPattern } from "../lib/pattern-matcher.js";
@@ -246,4 +248,89 @@ function generateUsageInstructions(
   instructions += `\ud83d\udcca Use 'list_all_ids' to see the complete workflow chain\n`;
 
   return instructions;
+}
+
+export function registerGenerateTool(server: McpServer): void {
+  server.registerTool(
+    'generate_export_tool',
+    {
+      title: 'Generate Export Tool',
+      description:
+        'Generates runnable export scripts from discovered API patterns. Include a description field to provide context for better code generation. LLMs should provide both toolName and description to help the code generation model create more relevant, contextual code.',
+      inputSchema: z.object({
+        discoveryId: z.string().min(1),
+        toolName: z.string().min(1),
+        description: z.string().min(1).describe('Description of what the tool does and what data it extracts.').nullable().optional(),
+        model: z.string().min(1).default('qwen2.5-coder:7b').describe('Model to use. For Ollama: e.g. qwen2.5-coder:7b. For HuggingFace: e.g. Qwen/Qwen2.5-Coder-32B-Instruct.').nullable().optional(),
+        targetUrl: z.string().url().nullable().optional(),
+        outputDirectory: z.string().nullable().optional(),
+        outputFormat: z.enum(['json', 'csv', 'sqlite']).default('json').optional(),
+        incremental: z.boolean().optional(),
+        language: z.enum(['typescript', 'python', 'javascript', 'go']).default('typescript').optional()
+      }).shape
+    },
+    async ({ discoveryId, toolName, description, model, targetUrl, outputDirectory, outputFormat, incremental, language }) => {
+      try {
+        const result = await generateExportTool({
+          discoveryId,
+          toolName,
+          description: description ?? undefined,
+          model: model ?? undefined,
+          targetUrl: targetUrl ?? undefined,
+          outputDirectory: outputDirectory ?? undefined,
+          outputFormat,
+          incremental,
+          language
+        });
+
+        if (!result.success) {
+          return {
+            content: [{ type: 'text' as const, text: `Failed to generate export tool: ${result.error}` }],
+            isError: true
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# 🎉 Export Tool Generated Successfully',
+                '',
+                `**File:** ${result.fileName}`,
+                `**Language:** ${result.language}`,
+                `**Path:** ${result.generatedPath}`,
+                `**Lines of Code:** ${result.linesOfCode}`,
+                result.tokensUsed ? `**Tokens Used:** ${result.tokensUsed}` : '',
+                '',
+                '## 📖 Usage Instructions',
+                '',
+                result.instructions || 'See the generated file for usage instructions.',
+                '',
+                '## ⚠️ Important Notes',
+                '',
+                '1. **Review the code** before running it',
+                '2. **Test with small datasets** first',
+                '3. **Monitor rate limits** to avoid being blocked',
+                '4. **Customize as needed** for your specific use case',
+                '',
+                '## 🚀 Next Steps',
+                '',
+                '1. Review and test the generated export tool',
+                '2. Run it to export data from the target API',
+                '3. Use search_exported_data to query the exported data'
+              ]
+                .filter(line => line !== '')
+                .join('\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error generating export tool: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true
+        };
+      }
+    }
+  );
 }

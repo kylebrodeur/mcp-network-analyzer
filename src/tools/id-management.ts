@@ -2,6 +2,8 @@
  * ID management tool - Generates and lists all available IDs for captures, analyses, and discoveries
  */
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { DatabaseService } from '../lib/database.js';
 import { Storage } from '../lib/storage.js';
 
@@ -883,4 +885,94 @@ function formatWorkflowChain(result: {
   }
 
   return output;
+}
+
+export function registerIdManagementTools(server: McpServer): void {
+  const sessionIdSchema = z.object({ sessionId: z.string().min(1) });
+  const getWorkflowChainSchema = z.object({
+    id: z.string().min(1),
+    sessionId: z.string().nullable().optional()
+  });
+  const validateIdSchema = z.object({
+    id: z.string().min(1),
+    type: z.enum(['capture', 'analysis', 'discovery', 'generation']),
+    sessionId: z.string().nullable().optional()
+  });
+
+  server.registerTool(
+    'list_session_ids',
+    {
+      title: 'List Session IDs',
+      description:
+        'List all IDs (captures, analyses, discoveries, generations) for a specific session. Secure - only shows your session data.',
+      inputSchema: sessionIdSchema.shape
+    },
+    async (params) => handleListSessionIds(params)
+  );
+
+  server.registerTool(
+    'get_next_session_ids',
+    {
+      title: 'Get Next Session IDs',
+      description:
+        'Get IDs that are ready for the next workflow phase within a specific session. Secure - only shows your session data.',
+      inputSchema: sessionIdSchema.shape
+    },
+    async (params) => handleGetNextSessionIds(params)
+  );
+
+  server.registerTool(
+    'generate_session_id',
+    {
+      title: 'Generate New Session ID',
+      description: 'Generates a new unique session ID for use with capture_network_requests.',
+      inputSchema: {}
+    },
+    async () => handleGenerateSessionId()
+  );
+
+  server.registerTool(
+    'get_workflow_chain',
+    {
+      title: 'Get Workflow Chain',
+      description:
+        'Shows the complete workflow chain for a given ID and suggests the next step. Supports session validation.',
+      inputSchema: getWorkflowChainSchema.shape
+    },
+    async (params) => handleGetWorkflowChain(params)
+  );
+
+  server.registerTool(
+    'validate_id',
+    {
+      title: 'Validate ID',
+      description:
+        'Validates if an ID exists and is of the correct type. Supports session validation for security.',
+      inputSchema: validateIdSchema.shape
+    },
+    async (params) => handleValidateId(params)
+  );
+
+  // Deprecated tools kept for backward compatibility
+  server.registerTool(
+    'list_all_ids',
+    {
+      title: 'List All IDs (DEPRECATED)',
+      description:
+        '⚠️ DEPRECATED: Use list_session_ids instead. This tool shows IDs from all sessions and should not be used in multi-user environments.',
+      inputSchema: {}
+    },
+    async () => handleListAllIds()
+  );
+
+  server.registerTool(
+    'get_next_available_ids',
+    {
+      title: 'Get Next Available IDs (DEPRECATED)',
+      description:
+        '⚠️ DEPRECATED: Use get_next_session_ids instead. This tool shows IDs from all sessions and should not be used in multi-user environments.',
+      inputSchema: {}
+    },
+    async () => handleGetNextIds()
+  );
 }

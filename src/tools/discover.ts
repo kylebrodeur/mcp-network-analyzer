@@ -3,8 +3,10 @@
  * Performs deep analysis to identify REST patterns, pagination, and data models
  */
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { z } from 'zod';
 import { DatabaseService } from "../lib/database.js";
 import {
     APIPattern,
@@ -282,4 +284,114 @@ function generateDiscoveryRecommendations(
   recommendations.push(`📊 Or use 'get_next_available_ids' to see all available IDs`);
 
   return recommendations;
+}
+
+export function registerDiscoverTool(server: McpServer): void {
+  server.registerTool(
+    'discover_api_patterns',
+    {
+      title: 'Discover API Patterns',
+      description:
+        'Performs deeper analysis against previous analyze results to infer REST patterns, pagination, and data models.',
+      inputSchema: z.object({
+        analysisId: z.string().min(1),
+        minConfidence: z.number().min(0).max(1).default(0.5).optional(),
+        includeAuthInsights: z.boolean().optional()
+      }).shape
+    },
+    async ({ analysisId, minConfidence, includeAuthInsights }) => {
+      try {
+        const result = await discoverApiPatterns({
+          analysisId,
+          minConfidence,
+          includeAuthInsights
+        });
+
+        if (!result.success) {
+          return {
+            content: [{ type: 'text' as const, text: `Failed to discover API patterns: ${result.error}` }],
+            isError: true
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: [
+                '# API Pattern Discovery Complete',
+                '',
+                `**Discovery ID:** ${result.discoveryId}`,
+                `**Analysis ID:** ${analysisId}`,
+                `**Patterns Found:** ${result.patterns.length}`,
+                '',
+                '## 🎯 Discovered Patterns',
+                result.patterns.length > 0
+                  ? result.patterns
+                      .map(pattern =>
+                        [
+                          `### ${pattern.method} ${pattern.pathPattern}`,
+                          `- Type: ${pattern.type}`,
+                          `- Confidence: ${pattern.confidence * 100}%`,
+                          `- Auth Required: ${pattern.authRequired ? 'Yes' : 'No'}`,
+                          `- Response Type: ${pattern.responseType}`,
+                          pattern.dataModel
+                            ? `- Data Model: ${pattern.dataModel.name} (${pattern.dataModel.propertyCount} properties${pattern.dataModel.hasNestedObjects ? ', with nested objects' : ''})`
+                            : '',
+                          `- Example: ${pattern.exampleUrl}`,
+                          ''
+                        ]
+                          .filter(line => line !== '')
+                          .join('\n')
+                      )
+                      .join('\n')
+                  : '- No patterns discovered (confidence threshold not met)',
+                '',
+                '## 📄 Pagination',
+                `- Type: ${result.pagination.type}`,
+                `- Detected: ${result.pagination.detected ? 'Yes' : 'No'}`,
+                result.pagination.detected
+                  ? `- Confidence: ${Math.round(result.pagination.confidence * 100)}%`
+                  : '',
+                result.pagination.params && Object.keys(result.pagination.params).length > 0
+                  ? `- Parameters: ${JSON.stringify(result.pagination.params)}`
+                  : '',
+                '',
+                '## ⚡ Rate Limiting',
+                `- Detected: ${result.rateLimiting.detected ? 'Yes' : 'No'}`,
+                result.rateLimiting.headers
+                  ? `- Headers: ${result.rateLimiting.headers.join(', ')}`
+                  : '',
+                '',
+                result.relationships.length > 0
+                  ? [
+                      '## 🔗 Endpoint Relationships',
+                      ...result.relationships.map(rel => `- ${rel.from} → ${rel.to} (${rel.type})`),
+                      ''
+                    ].join('\n')
+                  : '',
+                '## 💡 Recommendations',
+                ...result.recommendations.map((rec, i) => `${i + 1}. ${rec}`),
+                '',
+                '## 📁 Discovery Saved',
+                `Path: ${result.discoveryPath}`,
+                '',
+                '## 📊 Raw Data (JSON)',
+                '```json',
+                JSON.stringify(result, null, 2),
+                '```'
+              ]
+                .filter(line => line !== '')
+                .join('\n')
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error discovering API patterns: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true
+        };
+      }
+    }
+  );
 }
