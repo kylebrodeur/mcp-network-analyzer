@@ -1,27 +1,40 @@
+#!/usr/bin/env tsx
 /**
  * Quick test for analysis tools
- * Tests analyze_captured_data and discover_api_patterns
+ * Tests analyze_captured_data and discover_api_patterns against a fresh capture
  */
 
-import { analyzeCapturedData } from '../dist/tools/analyze.js';
-import { discoverApiPatterns } from '../dist/tools/discover.js';
-import { DatabaseService } from '../dist/lib/database.js';
-import { Storage } from '../dist/lib/storage.js';
+import { analyzeCapturedData } from '../src/tools/analyze.js';
+import { captureNetworkRequests } from '../src/tools/capture.js';
+import { discoverApiPatterns } from '../src/tools/discover.js';
+import { DatabaseService } from '../src/lib/database.js';
+import { Storage } from '../src/lib/storage.js';
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🧪 Testing Analysis Tools\n');
 
-  // Initialize storage and database (required before calling tool functions directly)
   await Storage.ensureDirectories();
   await DatabaseService.getInstance().initialize();
 
-  // Test 1: Analyze captured data
-  console.log('📊 Test 1: Analyzing captured data...');
-  const captureId = 'session_1763268089459_de38e0f1';
-  
   try {
+    // Capture first so we always have a valid captureId
+    console.log('🌐 Capturing test data...');
+    const captureResult = await captureNetworkRequests({
+      url: 'https://jsonplaceholder.typicode.com/posts',
+      waitForNetworkIdleMs: 2000,
+      ignoreStaticAssets: true
+    });
+
+    if (!captureResult.success) {
+      console.error('❌ Capture failed:', captureResult.error);
+      process.exit(1);
+    }
+    console.log(`✅ Capture: ${captureResult.captureId}\n`);
+
+    // Test 1: Analyze captured data
+    console.log('📊 Test 1: Analyzing captured data...');
     const analyzeResult = await analyzeCapturedData({
-      captureId,
+      captureId: captureResult.captureId,
       includeStaticAssets: false
     });
 
@@ -38,8 +51,7 @@ async function main() {
     console.log(`   Endpoint Groups: ${analyzeResult.endpointGroups.length}`);
     console.log(`   Authentication: ${analyzeResult.authentication.method} (${Math.round(analyzeResult.authentication.confidence * 100)}% confidence)`);
     console.log(`   Status Codes: ${Object.keys(analyzeResult.statusCodes).join(', ')}`);
-    console.log(`   Recommendations: ${analyzeResult.recommendations.length} items`);
-    console.log('');
+    console.log(`   Recommendations: ${analyzeResult.recommendations.length} items\n`);
 
     // Test 2: Discover API patterns
     console.log('🎯 Test 2: Discovering API patterns...');
@@ -66,8 +78,7 @@ async function main() {
     console.log(`   Pagination: ${discoverResult.pagination.type} (detected: ${discoverResult.pagination.detected})`);
     console.log(`   Rate Limiting: ${discoverResult.rateLimiting.detected ? 'Detected' : 'Not detected'}`);
     console.log(`   Relationships: ${discoverResult.relationships.length}`);
-    console.log(`   Recommendations: ${discoverResult.recommendations.length} items`);
-    console.log('');
+    console.log(`   Recommendations: ${discoverResult.recommendations.length} items\n`);
 
     console.log('🎉 All tests passed!');
     console.log('');

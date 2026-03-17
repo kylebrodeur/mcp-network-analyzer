@@ -15,10 +15,10 @@
     "start:stdio": "node dist/index.js",
     "dev:stdio": "tsx watch src/index.ts",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist",
-    "setup": "node scripts/setup.js",
-    "status": "node scripts/status.js",
-    "install-claude": "./scripts/install-claude.sh"
+    "clean": "node -e \"const{rmSync}=require('fs');try{rmSync('dist',{recursive:true,force:true})}catch{}\"" ,
+    "setup": "tsx scripts/setup.ts",
+    "status": "tsx scripts/status.ts",
+    "install-claude": "tsx scripts/install-claude.ts"
   },
   "keywords": [
     "mcp",
@@ -30,6 +30,9 @@
   ],
   "author": "kylebrodeur",
   "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "packageManager": "pnpm@10.21.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.22.0",

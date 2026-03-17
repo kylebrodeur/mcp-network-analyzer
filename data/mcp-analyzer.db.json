@@ -31,11 +31,24 @@
       "createdAt": "2025-11-24T17:14:37.159Z"
     }
   },
-  "analyses": {},
+  "analyses": {
+    "analysis_1773680747177_83fbzjqm": {
+      "id": "analysis_1773680747177_83fbzjqm",
+      "captureId": "session_1763268089459_de38e0f1",
+      "timestamp": "2026-03-16T17:05:47.177Z",
+      "status": "failed",
+      "totalRequests": 0,
+      "totalResponses": 0,
+      "apiEndpoints": 0,
+      "staticAssets": 0,
+      "errorCount": 0,
+      "createdAt": "2026-03-16T17:05:47.177Z"
+    }
+  },
   "discoveries": {},
   "generations": {},
   "metadata": {
     "version": "1.0.0",
-    "lastUpdated": "2025-11-24T17:14:37.160Z"
+    "lastUpdated": "2026-03-16T17:05:47.183Z"
   }
 }

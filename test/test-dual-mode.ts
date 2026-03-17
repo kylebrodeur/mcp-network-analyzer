@@ -1,14 +1,14 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 /**
- * Simple test script to verify storage functionality
- * Tests local, cloud, and Blaxel storage configurations
+ * Storage mode test
+ * Verifies local and cloud storage configurations work correctly
  */
 
-import { Config } from '../dist/lib/config.js';
-import { Storage } from '../dist/lib/storage.js';
+import { Config } from '../src/lib/config.js';
+import { Storage } from '../src/lib/storage.js';
+import type { CaptureSession } from '../src/lib/types.js';
 
-// Mock capture session for testing
-const createMockSession = () => ({
+const createMockSession = (): CaptureSession => ({
   id: 'test_session_' + Date.now(),
   url: 'https://example.com',
   startTime: new Date().toISOString(),
@@ -45,100 +45,83 @@ const createMockSession = () => ({
   }
 });
 
-async function testLocalMode() {
+async function testLocalMode(): Promise<boolean> {
   console.log('\n=== Testing Local Mode ===');
-  
-  // Reset and configure for local mode
+
   Config.reset();
   Storage.resetAdapter();
   process.env.MCP_STORAGE_MODE = 'local';
-  
+
   const config = Config.getInstance();
   console.log('Mode:', config.getMode());
   console.log('Is Local Mode:', config.isLocalMode());
-  
-  // Initialize storage
+
   await Storage.ensureDirectories();
   console.log('Data Directory:', Storage.getDataDirectory());
-  
-  // Create and save a test session
+
   const session = createMockSession();
   console.log('Session ID:', session.id);
-  
+
   const result = await Storage.saveCaptureSession(session);
   console.log('Save Result:', result.success ? '✓ Success' : '✗ Failed');
-  if (result.path) {
-    console.log('Saved to:', result.path);
-  }
-  if (result.error) {
-    console.error('Error:', result.error);
-  }
-  
+  if (result.path) console.log('Saved to:', result.path);
+  if (result.error) console.error('Error:', result.error);
+
   return result.success;
 }
 
-async function testCloudMode() {
+async function testCloudMode(): Promise<boolean> {
   console.log('\n=== Testing Cloud Mode ===');
-  
-  // Reset and configure for cloud mode
+
   Config.reset();
   Storage.resetAdapter();
   process.env.MCP_STORAGE_MODE = 'cloud';
   process.env.MCP_CLOUD_PROVIDER = 'aws-s3';
   process.env.MCP_CLOUD_BUCKET = 'test-bucket';
   process.env.MCP_CLOUD_REGION = 'us-east-1';
-  
+
   const config = Config.getInstance();
   console.log('Mode:', config.getMode());
   console.log('Is Cloud Mode:', config.isCloudMode());
-  
-  // Initialize storage
+
   try {
     await Storage.ensureDirectories();
     console.log('Data Directory:', Storage.getDataDirectory());
-    
-    // Create and save a test session
+
     const session = createMockSession();
     console.log('Session ID:', session.id);
-    
+
     const result = await Storage.saveCaptureSession(session);
     console.log('Save Result:', result.success ? '✓ Success' : '✗ Failed');
-    if (result.path) {
-      console.log('Saved to:', result.path);
-    }
-    if (result.error) {
-      console.error('Error:', result.error);
-    }
-    
+    if (result.path) console.log('Saved to:', result.path);
+    if (result.error) console.error('Error:', result.error);
+
     return result.success;
   } catch (error) {
-    console.error('Error during cloud mode test:', error.message);
+    console.error('Error during cloud mode test:', error instanceof Error ? error.message : String(error));
     return false;
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('MCP Network Analyzer - Storage Mode Test\n');
-  
-  const results = {
-    local: false,
-    cloud: false
-  };
-  
+
+  const results = { local: false, cloud: false };
+
   try {
     results.local = await testLocalMode();
     results.cloud = await testCloudMode();
   } catch (error) {
     console.error('\nTest error:', error);
   }
-  
+
   console.log('\n=== Test Results ===');
   console.log('Local Mode:', results.local ? '✓ PASS' : '✗ FAIL');
   console.log('Cloud Mode:', results.cloud ? '✓ PASS' : '✗ FAIL');
-  
+
   const allPassed = results.local && results.cloud;
   console.log('\nOverall:', allPassed ? '✓ ALL TESTS PASSED' : '✗ SOME TESTS FAILED');
-  
+
   process.exit(allPassed ? 0 : 1);
 }
 

@@ -1,19 +1,18 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 /**
  * Simple MCP test script
  * Tests the network analyzer tools directly without needing Claude Desktop
  */
 
-import { analyzeCapturedData } from '../dist/tools/analyze.js';
-import { captureNetworkRequests } from '../dist/tools/capture.js';
-import { discoverApiPatterns } from '../dist/tools/discover.js';
-import { DatabaseService } from '../dist/lib/database.js';
-import { Storage } from '../dist/lib/storage.js';
+import { analyzeCapturedData } from '../src/tools/analyze.js';
+import { captureNetworkRequests } from '../src/tools/capture.js';
+import { discoverApiPatterns } from '../src/tools/discover.js';
+import { DatabaseService } from '../src/lib/database.js';
+import { Storage } from '../src/lib/storage.js';
 
-async function test() {
+async function test(): Promise<void> {
   console.log('🧪 Testing MCP Network Analyzer...\n');
 
-  // Initialize storage and database (required before calling tool functions directly)
   await Storage.ensureDirectories();
   await DatabaseService.getInstance().initialize();
 
@@ -71,7 +70,6 @@ async function test() {
     console.log(`   - Rate limiting: ${discoverResult.rateLimiting.detected ? 'Yes' : 'No'}`);
     console.log(`   - Path: ${discoverResult.discoveryPath}\n`);
 
-    // Summary
     console.log('🎉 All tests passed!\n');
     console.log('📋 Test Summary:');
     console.log(`   Capture ID:   ${captureResult.captureId}`);
@@ -80,8 +78,8 @@ async function test() {
     console.log('\n✨ MCP server is ready to use with Claude Desktop');
 
   } catch (error) {
-    console.error('❌ Test failed with error:', error.message);
-    console.error(error.stack);
+    console.error('❌ Test failed with error:', error instanceof Error ? error.message : String(error));
+    if (error instanceof Error) console.error(error.stack);
     process.exit(1);
   }
 }

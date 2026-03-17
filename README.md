@@ -41,7 +41,13 @@ pnpm run build
 pnpm run install-claude
 ```
 
-Or manually add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+Or manually add to your Claude Desktop config:
+
+| Platform | Config file |
+|----------|-------------|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
 
 ```json
 {
@@ -193,7 +199,13 @@ npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport stream
 
 ## Usage with Claude Desktop
 
-Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+Add to your Claude Desktop configuration:
+
+| Platform | Config file |
+|----------|-------------|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
 
 ```json
 {
