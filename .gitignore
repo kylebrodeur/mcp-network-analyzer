@@ -6,6 +6,10 @@ dist/
 .DS_Store
 mcp.json
 
+# Monorepo package builds
+packages/*/dist/
+packages/*/node_modules/
+
 # Browser data
 browser-data/
 captured-requests.json

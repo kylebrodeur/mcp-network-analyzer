@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -34,14 +35,17 @@ await loadEnvFile();
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
-import { DatabaseService } from './lib/database.js';
-import { Storage } from './lib/storage.js';
-import { registerAnalyzeTool } from './tools/analyze.js';
-import { registerCaptureTool } from './tools/capture.js';
-import { registerDiscoverTool } from './tools/discover.js';
-import { registerHelpTools } from './tools/help.js';
-import { registerIdManagementTools } from './tools/id-management.js';
-import { registerSearchTool } from './tools/search.js';
+import {
+  DatabaseService,
+  Storage,
+  registerAnalyzeTool,
+  registerCaptureTool,
+  registerConfigTools,
+  registerDiscoverTool,
+  registerHelpTools,
+  registerIdManagementTools,
+  registerSearchTool
+} from '@mcp-network-analyzer/core';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
@@ -126,6 +130,7 @@ const main = async () => {
   registerSearchTool(server);
   registerHelpTools(server);
   registerIdManagementTools(server);
+  registerConfigTools(server);
 
   await server.connect(transport);
   log('info', 'MCP Network Analyzer server is ready for connections.');

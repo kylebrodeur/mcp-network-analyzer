@@ -6,8 +6,8 @@
  */
 
 import { existsSync } from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
@@ -519,6 +519,88 @@ async function showNextStepsRemote(): Promise<void> {
   console.log('Happy capturing! 🚀\n');
 }
 
+/**
+ * Non-interactively update the data directory in .env and the active profile
+ */
+async function setDataDir(inputPath: string): Promise<void> {
+  const resolvedPath = resolve(inputPath);
+
+  // Validate/create the directory
+  try {
+    await mkdir(resolvedPath, { recursive: true });
+  } catch (error) {
+    console.error(`❌ Cannot create directory "${resolvedPath}": ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+
+  // Update .env
+  const envPath = join(PROJECT_ROOT, '.env');
+  let envContent = '';
+  try {
+    envContent = await readFile(envPath, 'utf-8');
+  } catch { /* .env may not exist */ }
+
+  const lines = envContent.split('\n');
+  const idx = lines.findIndex(line => line.trimStart().startsWith('MCP_NETWORK_ANALYZER_DATA='));
+  if (idx >= 0) {
+    lines[idx] = `MCP_NETWORK_ANALYZER_DATA=${resolvedPath}`;
+  } else {
+    lines.push(`MCP_NETWORK_ANALYZER_DATA=${resolvedPath}`);
+  }
+  await writeFile(envPath, lines.join('\n'), 'utf-8');
+  log(`.env updated`, '✓');
+
+  // Update the active profile if one exists
+  const data = await loadProfiles();
+  if (data.active && data.profiles[data.active]) {
+    data.profiles[data.active].env.MCP_NETWORK_ANALYZER_DATA = resolvedPath;
+    await saveProfiles(data);
+    log(`Profile "${data.active}" updated`, '✓');
+  }
+
+  console.log(`\n✓ Data directory set to: ${resolvedPath}`);
+  console.log('  Restart the MCP server for the change to take effect.\n');
+}
+
+/**
+ * Print the current configuration from .env without running the wizard
+ */
+async function showConfig(): Promise<void> {
+  header('⚙️  Current Configuration');
+
+  // Read .env
+  const envPath = join(PROJECT_ROOT, '.env');
+  let envContent = '';
+  try {
+    envContent = await readFile(envPath, 'utf-8');
+  } catch {
+    console.log('  No .env file found. Run setup to create one.\n');
+    return;
+  }
+
+  const relevant = ['MCP_NETWORK_ANALYZER_DATA', 'MCP_STORAGE_MODE', 'PORT', 'HOST'];
+  const parsed: Record<string, string> = {};
+  for (const line of envContent.split('\n')) {
+    if (!line.includes('=') || line.trim().startsWith('#')) continue;
+    const [key, ...rest] = line.split('=');
+    parsed[key.trim()] = rest.join('=').trim();
+  }
+
+  console.log('  .env values:\n');
+  for (const key of relevant) {
+    if (parsed[key]) {
+      console.log(`    ${key}=${parsed[key]}`);
+    }
+  }
+
+  const data = await loadProfiles();
+  if (data.active) {
+    console.log(`\n  Active profile: ${data.active} (${data.profiles[data.active]?.mode ?? 'unknown'})`);
+    console.log('  Switch profiles: pnpm run setup -- --switch <name>');
+  }
+  console.log('');
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
 
@@ -538,6 +620,25 @@ async function main(): Promise<void> {
 
   if (args.includes('--list') || args.includes('-l')) {
     await listProfiles();
+    rl.close();
+    return;
+  }
+
+  if (args.includes('--data-dir') || args.includes('-d')) {
+    const flagIdx = args.indexOf('--data-dir') !== -1 ? args.indexOf('--data-dir') : args.indexOf('-d');
+    const dirPath = args[flagIdx + 1];
+    if (!dirPath) {
+      console.error('❌ --data-dir requires a path argument. Example: pnpm run setup -- --data-dir /path/to/data');
+      rl.close();
+      process.exit(1);
+    }
+    await setDataDir(dirPath);
+    rl.close();
+    return;
+  }
+
+  if (args.includes('--show-config') || args.includes('-c')) {
+    await showConfig();
     rl.close();
     return;
   }

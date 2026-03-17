@@ -1,0 +1,64 @@
+{
+  "name": "mcp-network-analyzer",
+  "version": "0.1.0",
+  "description": "MCP server for intelligent network request capture, analysis, and API pattern discovery",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-network-analyzer": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "SECURITY.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepack": "pnpm run build",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit",
+    "clean": "node -e \"const{rmSync}=require('fs');try{rmSync('dist',{recursive:true,force:true})}catch{}\"",
+    "test": "tsx ../../test/test-mcp.ts",
+    "setup": "tsx scripts/setup.ts",
+    "status": "tsx scripts/status.ts",
+    "install-claude": "tsx scripts/install-claude.ts"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "network-analysis",
+    "api-discovery",
+    "web-scraping",
+    "browser-automation",
+    "playwright",
+    "http-interceptor",
+    "rest-api",
+    "claude"
+  ],
+  "author": "kylebrodeur",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kylebrodeur/mcp-network-analyzer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kylebrodeur/mcp-network-analyzer/issues"
+  },
+  "homepage": "https://github.com/kylebrodeur/mcp-network-analyzer#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@mcp-network-analyzer/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.22.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

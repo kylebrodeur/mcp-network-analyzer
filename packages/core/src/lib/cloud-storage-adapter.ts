@@ -32,14 +32,10 @@ export class CloudStorageAdapter extends BaseStorageAdapter {
    * Initialize cloud storage
    */
   async initialize(): Promise<void> {
-    // Validate cloud configuration
-    this.validateConfiguration();
-
-    // TODO: Initialize cloud storage client based on provider
-    // For now, this is a placeholder that validates the configuration
-    console.error(`[Cloud Storage] Initialized ${this.cloudConfig.provider} storage`);
-    console.error(`[Cloud Storage] Bucket: ${this.cloudConfig.bucket || 'default'}`);
-    console.error(`[Cloud Storage] Region: ${this.cloudConfig.region || 'default'}`);
+    throw new Error(
+      'Cloud storage is not yet implemented. Set MCP_STORAGE_MODE=local (the default) to use local file storage. ' +
+      'See https://github.com/kylebrodeur/mcp-network-analyzer/issues for progress on cloud storage support.'
+    );
   }
 
   /**

@@ -1,0 +1,20 @@
+# Source files (only dist/ is needed)
+src/
+test/
+scripts/
+docs/
+
+# Config & tooling
+.vscode/
+.github/
+.env
+.env.profiles.json
+tsconfig.json
+
+# Build artifacts not needed in package
+*.tgz
+data/
+
+# Misc
+*.log
+.DS_Store
