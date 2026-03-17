@@ -12,9 +12,12 @@ export type { APIPattern, PatternDiscoveryResult, PaginationPattern } from './li
 export type { CaptureSession, CapturedRequest, CapturedResponse, BrowserConfig, InterceptorOptions, StorageResult } from './lib/types.js';
 
 // tools
-export { registerCaptureTool } from './tools/capture.js';
-export { registerAnalyzeTool } from './tools/analyze.js';
-export { registerDiscoverTool } from './tools/discover.js';
+export { registerCaptureTool, captureNetworkRequests } from './tools/capture.js';
+export type { CaptureOptions, CaptureResult } from './tools/capture.js';
+export { registerAnalyzeTool, analyzeCapturedData } from './tools/analyze.js';
+export type { AnalyzeOptions, AnalyzeResult } from './tools/analyze.js';
+export { registerDiscoverTool, discoverApiPatterns } from './tools/discover.js';
+export type { DiscoverOptions, DiscoverResult } from './tools/discover.js';
 export { registerSearchTool } from './tools/search.js';
 export { registerHelpTools } from './tools/help.js';
 export { registerIdManagementTools } from './tools/id-management.js';

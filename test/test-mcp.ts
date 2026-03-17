@@ -4,11 +4,7 @@
  * Tests the network analyzer tools directly without needing Claude Desktop
  */
 
-import { DatabaseService } from '../src/lib/database.js';
-import { Storage } from '../src/lib/storage.js';
-import { analyzeCapturedData } from '../src/tools/analyze.js';
-import { captureNetworkRequests } from '../src/tools/capture.js';
-import { discoverApiPatterns } from '../src/tools/discover.js';
+import { DatabaseService, Storage, analyzeCapturedData, captureNetworkRequests, discoverApiPatterns } from '@mcp-network-analyzer/core';
 
 async function test(): Promise<void> {
   console.log('🧪 Testing MCP Network Analyzer...\n');

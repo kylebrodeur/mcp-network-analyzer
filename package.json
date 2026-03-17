@@ -7,7 +7,11 @@
     "build:all": "pnpm --filter @mcp-network-analyzer/core build && pnpm --filter mcp-network-analyzer build && pnpm --filter mcp-network-analyzer-pro build",
     "type-check:all": "pnpm -r run type-check",
     "clean:all": "pnpm -r run clean",
-    "test": "pnpm --filter mcp-network-analyzer test"
+    "test": "tsx test/test-mcp.ts"
+  },
+  "devDependencies": {
+    "@mcp-network-analyzer/core": "workspace:*",
+    "tsx": "^4.20.6"
   },
   "engines": {
     "node": ">=18"
