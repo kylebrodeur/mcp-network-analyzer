@@ -31,3 +31,5 @@ data/generated/*
 
 # Perplexity exporter (published as separate repo)
 perplexity-exporter/
+
+mcp-network-data/
