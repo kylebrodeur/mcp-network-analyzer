@@ -30,7 +30,7 @@ All 4 core MCP tools are fully implemented and registered. The server is usable 
 * **Browser automation:** Playwright + stealth config, Chromium installed
 * **Database:** JSON-based (`data/mcp-analyzer.db.json`) — tracks all captures, analyses, discoveries and their relationships
 * **Local storage:** Fully working — all captured data persists under `data/`
-* **Setup tooling:** `scripts/setup.js` (wizard), `scripts/status.js`, `scripts/install-claude.sh`
+* **Setup tooling:** `scripts/setup.ts` (wizard), `scripts/status.ts`, `scripts/install-claude.ts`
 * **TypeScript strict mode:** zero compile errors
 
 ***
@@ -45,11 +45,11 @@ All 4 core MCP tools are fully implemented and registered. The server is usable 
 
 ### Formal Test Suite
 
-Only manual test scripts exist under `test/` (plain JS, not a test framework). Jest is not set up. The scripts are useful for smoke-testing but are not automated.
+Only manual test scripts exist under `test/` (TypeScript, run via `tsx`, not a test framework). Jest is not set up. The scripts are useful for smoke-testing but are not automated.
 
 ### npm Package Publication
 
-Not published. Package is `private: false` in `package.json` but has never been pushed to the registry.
+Not yet published. Package is `private: false` in `package.json`, has a `bin` entry, and `pnpm pack` is ready to use (`prepack` auto-builds). Run `pnpm pack` to generate the tarball or `pnpm publish` to push to the npm registry.
 
 ***
 
@@ -137,8 +137,8 @@ pnpm run setup
 pnpm run status
 
 # Development mode (watch + rebuild)
-pnpm run dev          # stdio mode
-pnpm run dev:http     # HTTP mode
+pnpm run dev          # HTTP mode
+pnpm run dev:stdio    # stdio mode
 
 # Build for production
 pnpm run build
@@ -231,8 +231,8 @@ npx @modelcontextprotocol/inspector http://localhost:3001/mcp --transport stream
 
 ### Tests
 
-* **Dual Mode Test:** `/test/test-dual-mode.js`
-* **MCP Test:** `/test/test-mcp.js`
+* **Dual Mode Test:** `/test/test-dual-mode.ts`
+* **MCP Test:** `/test/test-mcp.ts`
 
 ### External Links
 

@@ -147,7 +147,7 @@ Code generation (calling Ollama/HuggingFace to write export scripts from discove
 ### Phase 5: Data Search ✅ COMPLETE
 
 * [x] `search_exported_data` tool (`src/tools/search.ts`)
-* [x] Full-text search across captures, analyses, generated tools
+* [x] Full-text search across captures and analyses
 * [x] Status code and capture ID filtering
 * [x] Configurable result limits
 * [x] JSON-based database for indexing (`src/lib/database.ts`)
@@ -161,11 +161,12 @@ Code generation (calling Ollama/HuggingFace to write export scripts from discove
 * [x] Help system (`src/tools/help.ts`) — contextual guidance for all tools
 * [x] ID management tools (`src/tools/id-management.ts`) — session-scoped ID isolation
 * [x] Database query tools (`src/tools/query.ts`)
-* [x] Interactive setup wizard (`scripts/setup.js`)
-* [x] Status checker (`scripts/status.js`)
-* [x] Claude Desktop installer (`scripts/install-claude.sh`)
-* [ ] Formal test suite (Jest) — only manual smoke tests exist under `test/`
-* [ ] npm publication
+* [x] Interactive setup wizard (`scripts/setup.ts`)
+* [x] Status checker (`scripts/status.ts`)
+* [x] Claude Desktop installer (`scripts/install-claude.ts`)
+* [ ] Formal test suite (Jest) — only manual smoke tests exist under `test/` (TypeScript, run via `tsx`)
+* [x] `pnpm pack` ready — `prepack` script auto-builds, `bin` entry and `files` field set correctly
+* [ ] npm publication (registry publish)
 
 ***
 
