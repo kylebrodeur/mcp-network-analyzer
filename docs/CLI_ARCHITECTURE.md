@@ -6,7 +6,7 @@ Expose MCP Network Analyzer as a proper installed CLI so users get a first-class
 
 ## Current State
 
-The setup, status, and install-claude scripts live inside `packages/free/scripts/` and are only accessible via internal pnpm scripts (`pr setup`, `pr status`, `pr install-claude`). They are not part of the published surface area and require users to be inside the repo to run them.
+The setup, status, and install-claude scripts live inside `packages/cli/scripts/` and are only accessible via internal pnpm scripts (`pr setup`, `pr status`, `pr install-claude`). They are not part of the published surface area and require users to be inside the repo to run them.
 
 ## Target State
 
@@ -32,9 +32,9 @@ Running `mcp-network-analyzer` with no arguments shows status if already configu
 
 ## Package Changes Required
 
-**`packages/free/src/cli.ts`** — new CLI entrypoint. Parses the first argument as a subcommand and delegates to the existing logic extracted from `scripts/`.
+**`packages/cli/src/cli.ts`** — new CLI entrypoint. Parses the first argument as a subcommand and delegates to the existing logic extracted from `scripts/`.
 
-**`packages/free/package.json`** — add `bin` mapping pointing to the compiled CLI entrypoint:
+**`packages/cli/package.json`** — add `bin` mapping pointing to the compiled CLI entrypoint:
 
 ```json
 "bin": {
@@ -42,7 +42,7 @@ Running `mcp-network-analyzer` with no arguments shows status if already configu
 }
 ```
 
-**`packages/free/scripts/`** — refactored into thin wrappers that call the same shared modules so `pr setup` etc. keep working during development.
+**`packages/cli/scripts/`** — refactored into thin wrappers that call the same shared modules so `pr setup` etc. keep working during development.
 
 ## Claude Desktop Config
 

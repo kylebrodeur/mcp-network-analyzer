@@ -16,8 +16,8 @@ npx playwright install chromium
 # Build all packages (core must build before free/pro)
 pnpm build:all
 
-# Or build only the free package
-cd packages/free
+# Or build only the cli package
+cd packages/cli
 pnpm run build
 
 # Type check
@@ -31,7 +31,7 @@ This is a pnpm monorepo:
 ```
 packages/
   core/     @mcp-network-analyzer/core — shared lib and tools (private)
-  free/     mcp-network-analyzer — stdio transport (this package)
+  cli/      mcp-network-analyzer — stdio transport (this package)
   pro/      mcp-network-analyzer-pro — HTTP transport (private)
 ```
 
@@ -40,7 +40,7 @@ The `packages/core/src/` directory contains:
 - `lib/` — browser automation, network interception, storage, database, analyzer, pattern matcher
 - `tools/` — MCP tool implementations (capture, analyze, discover, search, help, id-management, config)
 
-The `packages/free/src/index.ts` entry point imports all tools from `@mcp-network-analyzer/core` and connects them via stdio transport.
+The `packages/cli/src/index.ts` entry point imports all tools from `@mcp-network-analyzer/core` and connects them via stdio transport.
 
 ## Running Tests
 
@@ -49,7 +49,7 @@ The `packages/free/src/index.ts` entry point imports all tools from `@mcp-networ
 pnpm test
 
 # Or directly
-cd packages/free
+cd packages/cli
 pnpm run test
 ```
 

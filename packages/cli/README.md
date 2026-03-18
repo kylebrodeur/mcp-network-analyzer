@@ -35,7 +35,7 @@ The `install` command detects installed MCP clients (Claude Desktop, VS Code, Cl
 git clone https://github.com/kylebrodeur/mcp-network-analyzer.git
 cd mcp-network-analyzer
 pnpm install
-cd packages/free
+cd packages/cli
 pnpm run build
 npx playwright install chromium
 pnpm run install-claude

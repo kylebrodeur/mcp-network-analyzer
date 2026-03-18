@@ -6,7 +6,7 @@ This repository contains the MCP Network Analyzer packages.
 
 | Package | Description | Published |
 | --- | --- | --- |
-| [`packages/free`](packages/free) | `mcp-network-analyzer` — stdio transport, local storage | npm / GitHub |
+| [`packages/cli`](packages/cli) | `mcp-network-analyzer` — stdio transport, local storage | npm / GitHub |
 | [`packages/pro`](packages/pro) | `mcp-network-analyzer-pro` — HTTP transport, cloud storage | private |
 | [`packages/core`](packages/core) | `@mcp-network-analyzer/core` — shared lib and tools | workspace-only |
 
@@ -16,23 +16,24 @@ This repository contains the MCP Network Analyzer packages.
 # Install all workspace dependencies
 pnpm install
 
-# Build all packages (core → free → pro)
+# Build all packages (core → cli → pro)
 pnpm build:all
 
 # Type-check all packages
 pnpm type-check:all
 ```
 
-## Free Version (stdio)
+## CLI Version (stdio)
 
-See [`packages/free/README.md`](packages/free/README.md) for installation and usage.
+See [`packages/cli/README.md`](packages/cli/README.md) for installation and usage.
 
-Quick install for Claude Desktop:
+Quick start:
 
 ```bash
-cd packages/free
-pnpm run setup
-pnpm run install-claude
+cd packages/cli
+pnpm run build
+mcp-network-analyzer setup
+mcp-network-analyzer install
 ```
 
 ## Pro Version (HTTP)
@@ -57,4 +58,4 @@ pnpm clean:all         # remove all dist/ directories
 
 ## License
 
-MIT — see [`packages/free/LICENSE`](packages/free/LICENSE)
+MIT — see [`packages/cli/LICENSE`](packages/cli/LICENSE)
