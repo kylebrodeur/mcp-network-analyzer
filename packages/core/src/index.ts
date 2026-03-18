@@ -28,4 +28,8 @@ export type { CliContext, Profile, ProfileData } from './cli/common.js';
 export { loadEnvFile, writeEnvFile, loadProfiles, saveProfiles, getEnvPath, getProfilesPath, parseEnvContent } from './cli/common.js';
 export { runStatusCommand } from './cli/status.js';
 export { runInstallClaudeCommand } from './cli/install-claude.js';
+export { runInstallCommand, detectMcpClients } from './cli/install-client.js';
+export type { McpClientInfo } from './cli/install-client.js';
 export { runResetCommand } from './cli/reset.js';
+export { createCli } from './cli/runner.js';
+export type { CliExtension, CliOptions } from './cli/runner.js';

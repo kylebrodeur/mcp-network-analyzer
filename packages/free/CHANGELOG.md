@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-05-15
+
+### Added
+- `install` command — detects installed MCP clients (Claude Desktop, VS Code, Claude Code, Gemini CLI, OpenAI Codex) and installs the server entry via the client's native interface or direct config write
+- `--client <id>` flag for non-interactive / CI installs
+- Unified core CLI runner (`createCli` + `CliExtension`) — free and pro share one CLI engine; package-specific commands (setup, serve) are registered as extensions
+
+### Removed
+- `install-claude` command — superseded by `install --client claude-desktop`
+
 ## [0.2.0] - 2026-03-18
 
 ### Added

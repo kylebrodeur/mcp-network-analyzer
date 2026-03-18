@@ -60,6 +60,35 @@
 			"type": "shell",
 			"command": "pnpm run build",
 			"group": "build"
+		},
+		{
+			"label": "verify: workspace checks",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"run",
+				"type-check:all"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify: build all",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"run",
+				"build:all"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify: smoke test",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"test"
+			],
+			"isBackground": false
 		}
 	]
 }

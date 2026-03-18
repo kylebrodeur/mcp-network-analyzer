@@ -24,10 +24,10 @@ A Model Context Protocol (MCP) server that provides intelligent network request 
 npm install -g mcp-network-analyzer
 npx playwright install chromium
 mcp-network-analyzer setup
-mcp-network-analyzer install-claude
+mcp-network-analyzer install
 ```
 
-Restart Claude Desktop — the `network-analyzer` MCP server will appear in your available tools.
+The `install` command detects installed MCP clients (Claude Desktop, VS Code, Claude Code, Gemini CLI, Codex) and installs the server entry interactively.
 
 ### Or clone and build from source
 
@@ -41,17 +41,30 @@ npx playwright install chromium
 pnpm run install-claude
 ```
 
-## CLI Setup
-
-Run the interactive wizard for profile management and data directory configuration:
+## CLI Reference
 
 ```bash
-mcp-network-analyzer setup                        # interactive wizard
-mcp-network-analyzer setup --data-dir /path      # set data directory non-interactively
-mcp-network-analyzer setup --show-config          # print current config
-mcp-network-analyzer setup --switch <name>        # switch profiles
-mcp-network-analyzer setup --list                 # list profiles
-mcp-network-analyzer status                       # check build and configuration status
+# First-time setup — interactive wizard and profile management
+mcp-network-analyzer setup
+mcp-network-analyzer setup --data-dir /path       # set data directory non-interactively
+mcp-network-analyzer setup --show-config           # print current config
+mcp-network-analyzer setup --switch <name>         # switch profiles
+mcp-network-analyzer setup --list                  # list profiles
+
+# Status check
+mcp-network-analyzer status
+
+# Install into an MCP client (interactive client picker)
+mcp-network-analyzer install
+mcp-network-analyzer install --client claude-desktop   # skip the picker
+mcp-network-analyzer install --client vscode           # VS Code user settings
+mcp-network-analyzer install --client vscode-workspace # workspace .vscode/mcp.json
+mcp-network-analyzer install --client claude-code      # Claude Code CLI (user scope)
+mcp-network-analyzer install --client gemini           # Gemini CLI
+mcp-network-analyzer install --client codex            # OpenAI Codex
+
+# Reset config / data
+mcp-network-analyzer reset
 ```
 
 ## MCP Tools
@@ -105,7 +118,7 @@ pnpm run clean && pnpm run build
 ```
 
 **Claude Desktop doesn't show the server**
-- Run `mcp-network-analyzer install-claude` then fully restart Claude Desktop (quit from system tray)
+- Run `mcp-network-analyzer install --client claude-desktop` then fully restart Claude Desktop (quit from system tray)
 - Verify the config at `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
 **"Cloud storage is not yet implemented"**
