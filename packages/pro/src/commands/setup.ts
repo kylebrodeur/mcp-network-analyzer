@@ -1,14 +1,14 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { createInterface } from 'node:readline';
 import { join, resolve } from 'node:path';
+import { createInterface } from 'node:readline';
 
 import {
-  CliContext,
-  loadEnvFile,
-  loadProfiles,
-  saveProfiles,
-  writeEnvFile
+    CliContext,
+    loadEnvFile,
+    loadProfiles,
+    saveProfiles,
+    writeEnvFile
 } from '@mcp-network-analyzer/core';
 
 function question(prompt: string, rl: ReturnType<typeof createInterface>): Promise<string> {

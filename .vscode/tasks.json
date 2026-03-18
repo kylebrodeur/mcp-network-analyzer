@@ -89,6 +89,15 @@
 				"test"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "build:all",
+			"type": "shell",
+			"command": "pnpm run build:all",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }

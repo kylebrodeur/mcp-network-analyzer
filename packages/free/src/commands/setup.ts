@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
-import { createInterface } from 'node:readline';
 import { resolve } from 'node:path';
+import { createInterface } from 'node:readline';
 
-import { CliContext, loadProfiles, saveProfiles, writeEnvFile, loadEnvFile } from '@mcp-network-analyzer/core';
+import { CliContext, loadEnvFile, loadProfiles, saveProfiles, writeEnvFile } from '@mcp-network-analyzer/core';
 
 interface SetupConfig {
   mode: string;

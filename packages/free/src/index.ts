@@ -32,15 +32,15 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
 import {
-  DatabaseService,
-  Storage,
-  registerAnalyzeTool,
-  registerCaptureTool,
-  registerConfigTools,
-  registerDiscoverTool,
-  registerHelpTools,
-  registerIdManagementTools,
-  registerSearchTool
+    DatabaseService,
+    Storage,
+    registerAnalyzeTool,
+    registerCaptureTool,
+    registerConfigTools,
+    registerDiscoverTool,
+    registerHelpTools,
+    registerIdManagementTools,
+    registerSearchTool
 } from '@mcp-network-analyzer/core';
 
 const require = createRequire(import.meta.url);
