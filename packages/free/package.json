@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "mcp-network-analyzer": "dist/index.js"
+    "mcp-network-analyzer": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -22,9 +22,11 @@
     "type-check": "tsc --noEmit",
     "clean": "node -e \"const{rmSync}=require('fs');try{rmSync('dist',{recursive:true,force:true})}catch{}\"",
     "test": "tsx ../../test/test-mcp.ts",
-    "setup": "tsx scripts/setup.ts",
-    "status": "tsx scripts/status.ts",
-    "install-claude": "tsx scripts/install-claude.ts"
+    "setup": "tsx src/cli.ts setup",
+    "status": "tsx src/cli.ts status",
+    "install-claude": "tsx src/cli.ts install-claude",
+    "reset": "tsx src/cli.ts reset",
+    "serve": "tsx src/cli.ts serve"
   },
   "keywords": [
     "mcp",

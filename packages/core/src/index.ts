@@ -22,3 +22,10 @@ export { registerSearchTool } from './tools/search.js';
 export { registerHelpTools } from './tools/help.js';
 export { registerIdManagementTools } from './tools/id-management.js';
 export { registerConfigTools } from './tools/config.js';
+
+// cli
+export type { CliContext, Profile, ProfileData } from './cli/common.js';
+export { loadEnvFile, writeEnvFile, loadProfiles, saveProfiles, getEnvPath, getProfilesPath, parseEnvContent } from './cli/common.js';
+export { runStatusCommand } from './cli/status.js';
+export { runInstallClaudeCommand } from './cli/install-claude.js';
+export { runResetCommand } from './cli/reset.js';

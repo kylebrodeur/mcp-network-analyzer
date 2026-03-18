@@ -1,36 +1,8 @@
 import express from 'express';
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-
-// Load environment variables from .env file
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const PROJECT_ROOT = join(__dirname, '..');
-
-async function loadEnvFile() {
-  try {
-    const envPath = join(PROJECT_ROOT, '.env');
-    const envContent = await readFile(envPath, 'utf-8');
-    const lines = envContent.split('\n');
-    for (const line of lines) {
-      if (line.includes('=') && !line.trim().startsWith('#')) {
-        const [key, ...valueParts] = line.split('=');
-        const value = valueParts.join('=').trim();
-        if (key.trim() && !process.env[key.trim()]) {
-          process.env[key.trim()] = value;
-        }
-      }
-    }
-  } catch (error) {
-    // .env file not found or not readable - that's ok
-  }
-}
-
-// Load environment variables before anything else
-await loadEnvFile();
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -38,6 +10,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import {
   DatabaseService,
   Storage,
+  loadEnvFile,
   registerAnalyzeTool,
   registerCaptureTool,
   registerConfigTools,
@@ -48,13 +21,11 @@ import {
 } from '@mcp-network-analyzer/core';
 import { registerQueryTools } from './tools/query.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version?: string };
-
-const PORT = parseInt(process.env.PORT || '3000', 10);
-const HOST = process.env.HOST || '0.0.0.0';
-
-function buildUsageInstructions(): string {
+const DEFAULT_PROJECT_ROOT = join(__dirname, '..');function buildUsageInstructions(): string {
   return [
     'Workflow overview:',
     '1. capture_network_requests → 2. analyze_captured_data → 3. discover_api_patterns → 4. search_exported_data.',
@@ -62,7 +33,17 @@ function buildUsageInstructions(): string {
   ].join('\n');
 }
 
-async function main() {
+export async function startServer(projectRoot = DEFAULT_PROJECT_ROOT): Promise<void> {
+  const env = await loadEnvFile(projectRoot);
+  for (const [key, value] of Object.entries(env)) {
+    if (!process.env[key]) {
+      process.env[key] = value;
+    }
+  }
+
+  const port = parseInt(process.env.PORT || '3000', 10);
+  const host = process.env.HOST || '0.0.0.0';
+
   await Storage.ensureDirectories();
   await DatabaseService.getInstance().initialize();
 
@@ -112,9 +93,9 @@ async function main() {
     await transport.handleRequest(req, res, req.body);
   });
 
-  const httpServer = app.listen(PORT, HOST, () => {
-    console.error(`[HTTP] MCP Network Analyzer Pro listening on http://${HOST}:${PORT}/mcp (Streamable HTTP)`);
-    console.error(`[HTTP] Health check: http://${HOST}:${PORT}/health`);
+  const httpServer = app.listen(port, host, () => {
+    console.error(`[HTTP] MCP Network Analyzer Pro listening on http://${host}:${port}/mcp (Streamable HTTP)`);
+    console.error(`[HTTP] Health check: http://${host}:${port}/health`);
   });
 
   httpServer.on('error', (error) => {
@@ -135,7 +116,9 @@ async function main() {
   });
 }
 
-main().catch(error => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  startServer().catch(error => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
+}

@@ -10,9 +10,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PROJECT_ROOT = join(__dirname, '..');
 
-async function loadEnvFile() {
+async function loadEnvFile(projectRoot: string) {
   try {
-    const envPath = join(PROJECT_ROOT, '.env');
+    const envPath = join(projectRoot, '.env');
     const envContent = await readFile(envPath, 'utf-8');
     const lines = envContent.split('\n');
     for (const line of lines) {
@@ -28,9 +28,6 @@ async function loadEnvFile() {
     // .env file not found or not readable - that's ok
   }
 }
-
-// Load environment variables before anything else
-await loadEnvFile();
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -60,24 +57,6 @@ function buildUsageInstructions(): string {
   ].join('\n');
 }
 
-const transport = new StdioServerTransport();
-
-const server = new McpServer(
-  {
-    name: 'mcp-network-analyzer',
-    version: packageJson.version ?? '0.0.0'
-  },
-  {
-    capabilities: {
-      logging: {},
-      tools: { listChanged: true },
-      resources: { listChanged: true },
-      prompts: { listChanged: true }
-    },
-    instructions: buildUsageInstructions()
-  }
-);
-
 const serializeError = (error: unknown) => {
   if (error instanceof Error) {
     return { name: error.name, message: error.message, stack: error.stack };
@@ -94,33 +73,66 @@ const log = (level: LogLevel, message: string, meta?: Record<string, unknown>) =
   console.error(prefix);
 };
 
-let isShuttingDown = false;
-
-const shutdown = async (signal?: NodeJS.Signals) => {
-  if (isShuttingDown) return;
-  isShuttingDown = true;
-  log('info', 'Shutting down MCP server.', signal ? { signal } : undefined);
-
-  try {
-    if (server.isConnected()) {
-      await server.close();
+function createServer() {
+  const transport = new StdioServerTransport();
+  const server = new McpServer(
+    {
+      name: 'mcp-network-analyzer',
+      version: packageJson.version ?? '0.0.0'
+    },
+    {
+      capabilities: {
+        logging: {},
+        tools: { listChanged: true },
+        resources: { listChanged: true },
+        prompts: { listChanged: true }
+      },
+      instructions: buildUsageInstructions()
     }
-  } catch (error) {
-    log('error', 'Error while closing server.', { error: serializeError(error) });
-  }
+  );
 
-  try {
-    await transport.close();
-  } catch (error) {
-    log('warn', 'Error while closing stdio transport.', { error: serializeError(error) });
-  }
+  return { server, transport };
+}
 
-  if (signal) {
-    process.exit(0);
-  }
-};
+export async function startServer(projectRoot = PROJECT_ROOT): Promise<void> {
+  await loadEnvFile(projectRoot);
+  const { server, transport } = createServer();
+  let isShuttingDown = false;
 
-const main = async () => {
+  const shutdown = async (signal?: NodeJS.Signals) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    log('info', 'Shutting down MCP server.', signal ? { signal } : undefined);
+
+    try {
+      if (server.isConnected()) {
+        await server.close();
+      }
+    } catch (error) {
+      log('error', 'Error while closing server.', { error: serializeError(error) });
+    }
+
+    try {
+      await transport.close();
+    } catch (error) {
+      log('warn', 'Error while closing stdio transport.', { error: serializeError(error) });
+    }
+
+    if (signal) {
+      process.exit(0);
+    }
+  };
+
+  process.once('SIGINT', () => shutdown('SIGINT'));
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('uncaughtException', error => {
+    log('error', 'Uncaught exception.', { error: serializeError(error) });
+    void shutdown();
+  });
+  process.on('unhandledRejection', reason => {
+    log('error', 'Unhandled promise rejection.', { error: serializeError(reason) });
+  });
+
   await Storage.ensureDirectories();
   await DatabaseService.getInstance().initialize();
 
@@ -134,19 +146,11 @@ const main = async () => {
 
   await server.connect(transport);
   log('info', 'MCP Network Analyzer server is ready for connections.');
-};
+}
 
-process.once('SIGINT', () => shutdown('SIGINT'));
-process.once('SIGTERM', () => shutdown('SIGTERM'));
-process.on('uncaughtException', error => {
-  log('error', 'Uncaught exception.', { error: serializeError(error) });
-  void shutdown();
-});
-process.on('unhandledRejection', reason => {
-  log('error', 'Unhandled promise rejection.', { error: serializeError(reason) });
-});
-
-main().catch(error => {
-  log('error', 'Fatal error during MCP server startup.', { error: serializeError(error) });
-  void shutdown();
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  startServer().catch(error => {
+    log('error', 'Fatal error during MCP server startup.', { error: serializeError(error) });
+    process.exit(1);
+  });
+}

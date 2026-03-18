@@ -4,6 +4,9 @@
   "description": "MCP Network Analyzer Pro — HTTP/hosted transport with cloud storage support",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "mcp-network-analyzer-pro": "dist/cli.js"
+  },
   "private": true,
   "scripts": {
     "build": "tsc",
@@ -11,8 +14,11 @@
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "clean": "node -e \"const{rmSync}=require('fs');try{rmSync('dist',{recursive:true,force:true})}catch{}\"",
-    "setup": "tsx scripts/setup.ts",
-    "status": "tsx scripts/status.ts"
+    "setup": "tsx src/cli.ts setup",
+    "status": "tsx src/cli.ts status",
+    "install-claude": "tsx src/cli.ts install-claude",
+    "reset": "tsx src/cli.ts reset",
+    "serve": "tsx src/cli.ts serve"
   },
   "engines": {
     "node": ">=18"
