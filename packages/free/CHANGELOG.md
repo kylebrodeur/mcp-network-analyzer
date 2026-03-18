@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-03-18
+
+### Added
+- Published CLI (`mcp-network-analyzer`) — `setup`, `status`, `install-claude`, `reset`, `serve` subcommands
+- Default behaviour: runs `status` when configured, `setup` when not
+- `reset` command with `--config`, `--data`, `--claude`, `--force` flags
+- Profile management via `setup --switch`, `setup --list`, `setup --show-config`
+- `exports` field for proper ESM module resolution
+
+### Changed
+- Build switched from `tsc` to `tsup` — bundles internal core, keeps the published package self-contained
+- Moved `@mcp-network-analyzer/core` to devDependencies (bundled at build time, not a runtime install)
+- Added `playwright` as a direct runtime dependency
+- Quick Start now shows `npm install -g mcp-network-analyzer` path
+
 ## [Unreleased]
 
 ### Changed

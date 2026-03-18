@@ -1,7 +1,6 @@
 # Source files (only dist/ is needed)
 src/
 test/
-scripts/
 docs/
 
 # Config & tooling
@@ -10,10 +9,13 @@ docs/
 .env
 .env.profiles.json
 tsconfig.json
+tsup.config.ts
 
 # Build artifacts not needed in package
 *.tgz
 data/
+mcp-network-data/
+tsconfig.tsbuildinfo
 
 # Misc
 *.log

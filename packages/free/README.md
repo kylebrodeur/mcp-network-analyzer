@@ -13,52 +13,45 @@ A Model Context Protocol (MCP) server that provides intelligent network request 
 ## Requirements
 
 - **Node.js** >= 18
-- **pnpm** (install with `npm install -g pnpm`)
-- **Chromium** (installed automatically by Playwright during setup)
+- **Chromium** (installed via Playwright — see Quick Start)
 - Linux users may need additional system libraries — see [Playwright Linux deps](https://playwright.dev/docs/browsers#install-system-dependencies)
 
 ## Quick Start
 
-### 1. Clone and install
+### Install from npm
+
+```bash
+npm install -g mcp-network-analyzer
+npx playwright install chromium
+mcp-network-analyzer setup
+mcp-network-analyzer install-claude
+```
+
+Restart Claude Desktop — the `network-analyzer` MCP server will appear in your available tools.
+
+### Or clone and build from source
 
 ```bash
 git clone https://github.com/kylebrodeur/mcp-network-analyzer.git
 cd mcp-network-analyzer
 pnpm install
-```
-
-### 2. Build
-
-```bash
 cd packages/free
 pnpm run build
-```
-
-### 3. Install Playwright browsers
-
-```bash
 npx playwright install chromium
-```
-
-### 4. Install to Claude Desktop
-
-```bash
 pnpm run install-claude
 ```
-
-Restart Claude Desktop. The `network-analyzer` MCP server will appear in your available tools.
 
 ## CLI Setup
 
 Run the interactive wizard for profile management and data directory configuration:
 
 ```bash
-pnpm run setup                        # interactive wizard
-pnpm run setup -- --data-dir /path    # set data directory non-interactively
-pnpm run setup -- --show-config       # print current config
-pnpm run setup -- --switch <name>     # switch profiles
-pnpm run setup -- --list              # list profiles
-pnpm run status                       # check build and configuration status
+mcp-network-analyzer setup                        # interactive wizard
+mcp-network-analyzer setup --data-dir /path      # set data directory non-interactively
+mcp-network-analyzer setup --show-config          # print current config
+mcp-network-analyzer setup --switch <name>        # switch profiles
+mcp-network-analyzer setup --list                 # list profiles
+mcp-network-analyzer status                       # check build and configuration status
 ```
 
 ## MCP Tools
@@ -112,7 +105,7 @@ pnpm run clean && pnpm run build
 ```
 
 **Claude Desktop doesn't show the server**
-- Run `pnpm run install-claude` then fully restart Claude Desktop (quit from system tray)
+- Run `mcp-network-analyzer install-claude` then fully restart Claude Desktop (quit from system tray)
 - Verify the config at `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
 **"Cloud storage is not yet implemented"**
