@@ -70,12 +70,6 @@ netcap reset
 pnpm unlink --global mcp-network-analyzer
 ```
 
-If you previously linked from monorepo root and see warnings about unrelated packages (for example `perplexity-exporter`), clean stale global links:
-
-```bash
-pnpm remove --global perplexity-exporter mcp-network-analyzer-workspace
-```
-
 After each rebuild, the linked binary picks up the new `dist/` automatically.
 
 ## 5. Tarball Install (closest to real npm install)

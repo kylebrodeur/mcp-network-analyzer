@@ -29,7 +29,4 @@ data/analyses/*
 data/generated/*
 !data/generated/.gitkeep
 
-# Perplexity exporter (published as separate repo)
-perplexity-exporter/
-
 mcp-network-data/
