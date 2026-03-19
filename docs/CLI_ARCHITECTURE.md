@@ -6,39 +6,39 @@ Expose MCP Network Analyzer as a proper installed CLI so users get a first-class
 
 ## Current State
 
-The setup, status, and install-claude scripts live inside `packages/cli/scripts/` and are only accessible via internal pnpm scripts (`pr setup`, `pr status`, `pr install-claude`). They are not part of the published surface area and require users to be inside the repo to run them.
+The CLI is exposed through a single published binary and command family (`netcap` / `mcp-network-analyzer`). Setup, status, install, reset, and serve are available from the installed package.
 
 ## Target State
 
-The published package exposes a single `mcp-network-analyzer` binary. Users install it once, globally or in a dedicated folder, and interact with it through a stable CLI.
+The published package exposes two bin aliases: `netcap` (short form) and `mcp-network-analyzer` (full form). Both point to the same entry point. Users install once, globally or in a dedicated folder.
 
 ```
 npm install -g mcp-network-analyzer
-# or
-npm install mcp-network-analyzer  (in a dedicated ~/mcp-tools folder)
 ```
 
-Then use it:
+Then use either alias interchangeably:
 
 ```
-mcp-network-analyzer setup          # onboarding wizard
-mcp-network-analyzer status         # health check
-mcp-network-analyzer install-claude # write Claude Desktop config
-mcp-network-analyzer reset          # clear config and/or data (with confirmation)
-mcp-network-analyzer serve          # start MCP stdio server (used by Claude at runtime)
+netcap setup          # onboarding wizard
+netcap status         # health check
+netcap install        # install into a detected MCP client
+netcap install --client claude-desktop
+netcap reset          # clear config and/or data (with confirmation)
+netcap serve          # start MCP stdio server (used by Claude at runtime)
 ```
 
-Running `mcp-network-analyzer` with no arguments shows status if already configured, or runs setup if it is a first run.
+Running `netcap` with no arguments shows status if already configured, or runs setup if it is a first run.
 
 ## Package Changes Required
 
 **`packages/cli/src/cli.ts`** — new CLI entrypoint. Parses the first argument as a subcommand and delegates to the existing logic extracted from `scripts/`.
 
-**`packages/cli/package.json`** — add `bin` mapping pointing to the compiled CLI entrypoint:
+**`packages/cli/package.json`** — `bin` mapping with both aliases:
 
 ```json
 "bin": {
-  "mcp-network-analyzer": "dist/cli.js"
+  "mcp-network-analyzer": "dist/cli.js",
+  "netcap": "dist/cli.js"
 }
 ```
 
@@ -46,7 +46,7 @@ Running `mcp-network-analyzer` with no arguments shows status if already configu
 
 ## Claude Desktop Config
 
-The `install-claude` command writes the Claude Desktop config with an absolute reference to the installed package entry, not a transient `npx` call:
+The `install --client claude-desktop` command writes the Claude Desktop config with an absolute reference to the installed package entry, not a transient `npx` call:
 
 ```json
 {
@@ -73,4 +73,4 @@ No data is deleted without explicit `y` confirmation. A `--force` flag is availa
 
 ## Backward Compatibility
 
-The existing `pr setup`, `pr status`, `pr install-claude` scripts remain functional during development. They are kept as thin delegates to the same underlying modules. The dist CLI is the only surface that ships in the published package.
+The existing `pr setup` and `pr status` scripts remain functional during development as wrappers over the same command modules. The dist CLI is the only surface that ships in the published package.

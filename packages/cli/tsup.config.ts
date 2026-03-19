@@ -9,7 +9,7 @@ const shared = {
   // Bundle core so the published package is self-contained.
   noExternal: ['@mcp-network-analyzer/core'],
   // Keep true runtime deps as externals — installed alongside this package.
-  external: ['playwright', '@modelcontextprotocol/sdk', 'zod'],
+  external: ['playwright', '@modelcontextprotocol/sdk', 'zod', 'commander'],
 };
 
 export default defineConfig([

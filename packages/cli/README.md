@@ -22,10 +22,11 @@ A Model Context Protocol (MCP) server that provides intelligent network request 
 
 ```bash
 npm install -g mcp-network-analyzer
-npx playwright install chromium
-mcp-network-analyzer setup
-mcp-network-analyzer install
+netcap setup
+netcap install
 ```
+
+> `netcap` is the short alias for `mcp-network-analyzer` — both are installed and work identically.
 
 The `install` command detects installed MCP clients (Claude Desktop, VS Code, Claude Code, Gemini CLI, Codex) and installs the server entry interactively.
 
@@ -35,37 +36,47 @@ The `install` command detects installed MCP clients (Claude Desktop, VS Code, Cl
 git clone https://github.com/kylebrodeur/mcp-network-analyzer.git
 cd mcp-network-analyzer
 pnpm install
+pnpm --filter mcp-network-analyzer build
 cd packages/cli
-pnpm run build
-npx playwright install chromium
-pnpm run install-claude
+pnpm link --global
+netcap setup
+netcap install --client claude-desktop
 ```
 
 ## CLI Reference
 
 ```bash
 # First-time setup — interactive wizard and profile management
-mcp-network-analyzer setup
-mcp-network-analyzer setup --data-dir /path       # set data directory non-interactively
-mcp-network-analyzer setup --show-config           # print current config
-mcp-network-analyzer setup --switch <name>         # switch profiles
-mcp-network-analyzer setup --list                  # list profiles
+netcap setup
+netcap setup --data-dir /path       # set data directory non-interactively
+netcap setup --show-config           # print current config
+netcap setup --switch <name>         # switch profiles
+netcap setup --list                  # list profiles
+netcap setup --reset                 # clear .env/profiles, then re-run setup
+netcap setup --install-chromium      # install/reinstall Playwright Chromium
 
 # Status check
-mcp-network-analyzer status
+netcap status
 
 # Install into an MCP client (interactive client picker)
-mcp-network-analyzer install
-mcp-network-analyzer install --client claude-desktop   # skip the picker
-mcp-network-analyzer install --client vscode           # VS Code user settings
-mcp-network-analyzer install --client vscode-workspace # workspace .vscode/mcp.json
-mcp-network-analyzer install --client claude-code      # Claude Code CLI (user scope)
-mcp-network-analyzer install --client gemini           # Gemini CLI
-mcp-network-analyzer install --client codex            # OpenAI Codex
+netcap install
+netcap install --client claude-desktop   # skip the picker
+netcap install --client vscode           # VS Code user settings
+netcap install --client vscode-workspace # workspace .vscode/mcp.json
+netcap install --client claude-code      # Claude Code CLI (user scope)
+netcap install --client gemini           # Gemini CLI
+netcap install --client codex            # OpenAI Codex
 
 # Reset config / data
-mcp-network-analyzer reset
+netcap reset
+
+# Serve mode
+netcap serve                         # stdio (default)
+netcap serve --mode stdio            # force stdio
+netcap serve --mode http             # HTTP mode (requires pro package)
 ```
+
+> `mcp-network-analyzer` is also available as a full-length alias.
 
 ## MCP Tools
 
@@ -75,6 +86,9 @@ mcp-network-analyzer reset
 | `analyze_captured_data` | Extract REST patterns, auth methods, content types |
 | `discover_api_patterns` | Deep pattern analysis — pagination, data models, relationships |
 | `search_exported_data` | Full-text search across captured requests and responses |
+| `list_analyses` | Query stored analyses with optional filters |
+| `list_discoveries` | Query stored discoveries with optional filters |
+| `get_database_stats` | Get aggregate database statistics |
 | `get_server_config` | View current data directory and storage stats |
 | `set_data_directory` | Change data directory at runtime (persisted to `.env`) |
 | `get_help` | Usage guide and workflow overview |
@@ -108,7 +122,7 @@ pnpm run setup -- --data-dir /your/custom/path
 
 **Browser won't launch**
 ```bash
-npx playwright install chromium
+netcap setup --install-chromium
 # Linux: npx playwright install-deps chromium
 ```
 
@@ -118,7 +132,7 @@ pnpm run clean && pnpm run build
 ```
 
 **Claude Desktop doesn't show the server**
-- Run `mcp-network-analyzer install --client claude-desktop` then fully restart Claude Desktop (quit from system tray)
+- Run `netcap install --client claude-desktop` then fully restart Claude Desktop (quit from system tray)
 - Verify the config at `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
 **"Cloud storage is not yet implemented"**

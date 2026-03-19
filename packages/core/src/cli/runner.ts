@@ -1,10 +1,9 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { Command } from 'commander';
+
 import { CliContext } from './common.js';
-import { runInstallCommand } from './install-client.js';
-import { runResetCommand } from './reset.js';
-import { runStatusCommand } from './status.js';
 
 export interface CliExtension {
   /** The command name, e.g. "setup" or "serve". */
@@ -40,6 +39,21 @@ const INSTALL_HELP_LINES = [
   '                             claude-code, gemini, codex',
 ];
 
+async function runStatus(context: CliContext): Promise<void> {
+  const { runStatusCommand } = await import('./status.js');
+  await runStatusCommand(context);
+}
+
+async function runInstall(context: CliContext, args: string[]): Promise<void> {
+  const { runInstallCommand } = await import('./install-client.js');
+  await runInstallCommand(context, args);
+}
+
+async function runReset(context: CliContext, args: string[]): Promise<void> {
+  const { runResetCommand } = await import('./reset.js');
+  await runResetCommand(context, args);
+}
+
 export function createCli(options: CliOptions): { run: (argv: string[]) => Promise<void> } {
   const { binName, getVersion, extensions } = options;
 
@@ -56,54 +70,76 @@ export function createCli(options: CliOptions): { run: (argv: string[]) => Promi
     return { projectRoot: process.cwd() };
   }
 
-  function printHelp(): void {
-    const extensionHelp = extensions.map(e => {
-      const padded = e.command.padEnd(22);
-      return `  ${padded}${e.description}`;
-    });
-    const builtinHelp = BUILTIN_HELP.map(b => {
-      const padded = b.command.padEnd(22);
-      return `  ${padded}${b.description}`;
-    });
-    const extraLines: string[] = [];
-    for (const ext of extensions) {
-      if (ext.helpLines) extraLines.push('', `${ext.command} options:`, ...ext.helpLines);
-    }
-    // Extra lines for install built-in
-    const installExtra = ['', 'install options:', ...INSTALL_HELP_LINES];
+  function buildProgram(context: CliContext): Command {
+    const program = new Command();
 
-    console.log(`${binName} <command> [options]`);
-    console.log('');
-    console.log('Commands:');
-    console.log([...extensionHelp, ...builtinHelp].join('\n'));
-    console.log([...extraLines, ...installExtra].join('\n'));
-    console.log('');
-    console.log('Global options:');
-    console.log('  -h, --help            Show help');
-    console.log('  -v, --version         Show package version');
+    program
+      .name(binName)
+      .helpOption('-h, --help', 'Show help')
+      .version(getVersion(), '-v, --version', 'Show package version');
+
+    for (const ext of extensions) {
+      const command = program
+        .command(ext.command)
+        .description(ext.description)
+        .allowUnknownOption(true)
+        .action(async (_options, cmd) => {
+          await ext.run(context, cmd.args as string[]);
+        });
+
+      if (ext.helpLines?.length) {
+        command.addHelpText('after', `\n${ext.command} options:\n${ext.helpLines.join('\n')}`);
+      }
+    }
+
+    program
+      .command('status')
+      .description(BUILTIN_HELP[0].description)
+      .action(async () => {
+        await runStatus(context);
+      });
+
+    program
+      .command('install')
+      .description(BUILTIN_HELP[1].description)
+      .allowUnknownOption(true)
+      .addHelpText('after', `\ninstall options:\n${INSTALL_HELP_LINES.join('\n')}`)
+      .action(async (_options, cmd) => {
+        await runInstall(context, cmd.args as string[]);
+      });
+
+    program
+      .command('reset')
+      .description(BUILTIN_HELP[2].description)
+      .allowUnknownOption(true)
+      .action(async (_options, cmd) => {
+        await runReset(context, cmd.args as string[]);
+      });
+
+    return program;
   }
 
   async function run(argv: string[]): Promise<void> {
     const context = buildContext();
-    const [command, ...rest] = argv;
+    const [command] = argv;
 
     if (!command) {
       const hasConfig = existsSync(join(context.projectRoot, '.env'));
       if (hasConfig) {
-        await runStatusCommand(context);
+        await runStatus(context);
       } else {
         const setupExt = extensions.find(e => e.command === 'setup');
         if (setupExt) {
           await setupExt.run(context, []);
         } else {
-          printHelp();
+          buildProgram(context).outputHelp();
         }
       }
       return;
     }
 
-    if (command === '--help' || command === '-h' || command === 'help') {
-      printHelp();
+    if (command === 'help') {
+      buildProgram(context).outputHelp();
       return;
     }
 
@@ -112,29 +148,8 @@ export function createCli(options: CliOptions): { run: (argv: string[]) => Promi
       return;
     }
 
-    // Check extension commands first
-    const ext = extensions.find(e => e.command === command);
-    if (ext) {
-      await ext.run(context, rest);
-      return;
-    }
-
-    // Built-in core commands
-    switch (command) {
-      case 'status':
-        await runStatusCommand(context);
-        return;
-      case 'install':
-        await runInstallCommand(context, rest);
-        return;
-      case 'reset':
-        await runResetCommand(context, rest);
-        return;
-      default:
-        console.error(`Unknown command: ${command}`);
-        printHelp();
-        process.exit(1);
-    }
+    const program = buildProgram(context);
+    await program.parseAsync(argv, { from: 'user' });
   }
 
   return { run };

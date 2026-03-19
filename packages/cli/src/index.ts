@@ -30,6 +30,7 @@ async function loadEnvFile(projectRoot: string) {
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { z } from 'zod';
 
 import {
     DatabaseService,
@@ -71,6 +72,147 @@ const log = (level: LogLevel, message: string, meta?: Record<string, unknown>) =
   }
   console.error(prefix);
 };
+
+function registerQueryTools(server: McpServer): void {
+  server.registerTool(
+    'list_analyses',
+    {
+      title: 'List Analyses',
+      description: 'List all analyses with optional filtering by status',
+      inputSchema: z.object({
+        limit: z.number().optional(),
+        status: z.enum(['processing', 'complete', 'failed']).optional(),
+      }).shape,
+    },
+    async ({ limit, status }) => {
+      try {
+        const db = DatabaseService.getInstance();
+        const analyses = db.listAnalyses();
+        let filtered = analyses;
+
+        if (status) {
+          filtered = filtered.filter(a => a.status === status);
+        }
+
+        if (limit) {
+          filtered = filtered.slice(0, limit);
+        }
+
+        const payload = {
+          total: analyses.length,
+          filtered: filtered.length,
+          analyses: filtered.map(a => ({
+            id: a.id,
+            captureId: a.captureId,
+            status: a.status,
+            timestamp: a.timestamp,
+            totalRequests: a.totalRequests,
+            totalResponses: a.totalResponses,
+            apiEndpoints: a.apiEndpoints,
+            staticAssets: a.staticAssets,
+            errorCount: a.errorCount,
+          })),
+        };
+
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `# Analyses\n\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    'list_discoveries',
+    {
+      title: 'List Discoveries',
+      description: 'List all discoveries with optional filtering',
+      inputSchema: z.object({
+        limit: z.number().optional(),
+        analysisId: z.string().optional(),
+        status: z.enum(['processing', 'complete', 'failed']).optional(),
+      }).shape,
+    },
+    async ({ limit, analysisId, status }) => {
+      try {
+        const db = DatabaseService.getInstance();
+        const discoveries = db.listDiscoveries();
+        let filtered = discoveries;
+
+        if (analysisId) {
+          filtered = filtered.filter(d => d.analysisId === analysisId);
+        }
+
+        if (status) {
+          filtered = filtered.filter(d => d.status === status);
+        }
+
+        if (limit) {
+          filtered = filtered.slice(0, limit);
+        }
+
+        const payload = {
+          total: discoveries.length,
+          filtered: filtered.length,
+          discoveries: filtered.map(d => ({
+            id: d.id,
+            analysisId: d.analysisId,
+            status: d.status,
+            timestamp: d.timestamp,
+            patternsFound: d.patternsFound,
+            paginationDetected: d.paginationDetected,
+            rateLimitingDetected: d.rateLimitingDetected,
+          })),
+        };
+
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `# Discoveries\n\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_database_stats',
+    {
+      title: 'Get Database Statistics',
+      description: 'Get overall statistics about the MCP database',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const db = DatabaseService.getInstance();
+        const stats = db.getStats();
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `# Database Statistics\n\n\`\`\`json\n${JSON.stringify(stats, null, 2)}\n\`\`\``,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+}
 
 function createServer() {
   const transport = new StdioServerTransport();
@@ -139,6 +281,7 @@ export async function startServer(projectRoot = PROJECT_ROOT): Promise<void> {
   registerAnalyzeTool(server);
   registerDiscoverTool(server);
   registerSearchTool(server);
+  registerQueryTools(server);
   registerHelpTools(server);
   registerIdManagementTools(server);
   registerConfigTools(server);

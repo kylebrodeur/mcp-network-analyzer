@@ -1,5 +1,7 @@
+import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 
@@ -56,7 +58,7 @@ export async function listProfiles(context: CliContext): Promise<void> {
     }
   }
 
-  console.log('\n💡 Switch profiles: mcp-network-analyzer setup --switch <name>\n');
+  console.log('\n💡 Switch profiles: netcap setup --switch <name>\n');
 }
 
 async function setupLocal(ask: (prompt: string) => Promise<string>): Promise<SetupConfig> {
@@ -69,7 +71,11 @@ async function setupLocal(ask: (prompt: string) => Promise<string>): Promise<Set
 
   const config: SetupConfig = { mode: 'local', env: {} };
   if (customPath.trim()) {
-    config.env.MCP_NETWORK_ANALYZER_DATA = customPath.trim();
+    const trimmed = customPath.trim();
+    const normalized = trimmed.startsWith('~/')
+      ? resolve(homedir(), trimmed.slice(2))
+      : resolve(trimmed);
+    config.env.MCP_NETWORK_ANALYZER_DATA = normalized;
   }
 
   log('Local storage configured!');
@@ -115,22 +121,44 @@ async function saveConfiguration(
   log(`Profile "${resolvedProfileName}" saved`, '✓');
 
   console.log('\n✓ Configuration saved!');
-  console.log('\n💡 Switch profiles anytime: mcp-network-analyzer setup --switch <name>');
+  console.log('\n💡 Switch profiles anytime: netcap setup --switch <name>');
   return true;
+}
+
+async function resetSetupState(context: CliContext): Promise<void> {
+  await writeEnvFile(context.projectRoot, {});
+  await saveProfiles(context.projectRoot, { profiles: {}, active: null });
+  log('Cleared existing .env and saved profiles', '✓');
+  console.log('ℹ️  Existing capture/analysis data was not deleted. Use `netcap reset --data` if needed.\n');
+}
+
+async function installPlaywrightBrowsers(): Promise<void> {
+  console.log('\n🌐 Installing Playwright browsers (Chromium)...');
+  try {
+    const result = spawnSync('npx', ['playwright', 'install', 'chromium'], {
+      stdio: 'inherit',
+      shell: process.platform === 'win32'
+    });
+    if (result.status === 0) {
+      log('Playwright Chromium installed', '✓');
+    } else {
+      console.warn('⚠️  Playwright browser install failed — run: netcap setup --install-chromium');
+    }
+  } catch {
+    console.warn('⚠️  Could not auto-install Playwright browsers — run: netcap setup --install-chromium');
+  }
 }
 
 async function showNextSteps(): Promise<void> {
   header('🎉 Setup Complete!');
 
   console.log('Next steps:\n');
-  console.log('1. Build the project:');
-  console.log('   pr build\n');
-  console.log('2. Test with MCP Inspector:');
-  console.log('   npx @modelcontextprotocol/inspector node dist/index.js\n');
-  console.log('3. Install to Claude Desktop:');
-  console.log('   mcp-network-analyzer install-claude\n');
-  console.log('4. Check status anytime:');
-  console.log('   mcp-network-analyzer status\n');
+  console.log('1. Install to your MCP client:');
+  console.log('   netcap install\n');
+  console.log('2. Check status anytime:');
+  console.log('   netcap status\n');
+  console.log('3. Reinstall Chromium if browser setup breaks:');
+  console.log('   netcap setup --install-chromium\n');
 }
 
 export async function setDataDir(context: CliContext, inputPath: string): Promise<void> {
@@ -181,15 +209,17 @@ export async function showConfig(context: CliContext): Promise<void> {
   const data = await loadProfiles(context.projectRoot);
   if (data.active) {
     console.log(`\n  Active profile: ${data.active} (${data.profiles[data.active]?.mode ?? 'unknown'})`);
-    console.log('  Switch profiles: mcp-network-analyzer setup --switch <name>');
+    console.log('  Switch profiles: netcap setup --switch <name>');
   }
   console.log('');
 }
 
 function printSetupUsage(): void {
-  console.log('Usage: mcp-network-analyzer setup [options]');
+  console.log('Usage: netcap setup [options]');
   console.log('  --switch, -s <name>   Switch active profile');
   console.log('  --list, -l            List saved profiles');
+  console.log('  --reset, -r           Clear .env/profiles, then run setup wizard again');
+  console.log('  --install-chromium    Install or reinstall Playwright Chromium');
   console.log('  --data-dir, -d <dir>  Set data directory non-interactively');
   console.log('  --show-config, -c     Print current .env/profile configuration');
 }
@@ -197,6 +227,11 @@ function printSetupUsage(): void {
 export async function runSetupCommand(context: CliContext, args: string[]): Promise<void> {
   if (args.includes('--help') || args.includes('-h')) {
     printSetupUsage();
+    return;
+  }
+
+  if (args.includes('--install-chromium')) {
+    await installPlaywrightBrowsers();
     return;
   }
 
@@ -236,29 +271,42 @@ export async function runSetupCommand(context: CliContext, args: string[]): Prom
     return;
   }
 
+  const shouldReset = args.includes('--reset') || args.includes('-r');
+
   console.log('\n🔧 MCP Network Analyzer - Setup Wizard\n');
   console.log('This wizard will help you configure the network analyzer.\n');
-
-  const existingProfiles = await loadProfiles(context.projectRoot);
-  if (Object.keys(existingProfiles.profiles).length > 0) {
-    console.log('📋 Existing profiles:');
-    for (const [name, profile] of Object.entries(existingProfiles.profiles)) {
-      const isActive = name === existingProfiles.active ? '✓' : ' ';
-      console.log(`  [${isActive}] ${name} - ${profile.mode}`);
-    }
-    console.log('');
-  }
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const ask = (prompt: string): Promise<string> => new Promise(resolve => rl.question(prompt, resolve));
 
   try {
+    if (shouldReset) {
+      const confirm = await ask('⚠️  Reset existing .env and profiles before setup? [y/N]: ');
+      if (confirm.trim().toLowerCase() === 'y') {
+        await resetSetupState(context);
+      } else {
+        console.log('ℹ️  Continuing setup without resetting existing profiles.\n');
+      }
+    }
+
+    const existingProfiles = await loadProfiles(context.projectRoot);
+    if (Object.keys(existingProfiles.profiles).length > 0) {
+      console.log('📋 Existing profiles:');
+      for (const [name, profile] of Object.entries(existingProfiles.profiles)) {
+        const isActive = name === existingProfiles.active ? '✓' : ' ';
+        console.log(`  [${isActive}] ${name} - ${profile.mode}`);
+      }
+      console.log('');
+    }
+
     const config = await setupLocal(ask);
     const saved = await saveConfiguration(context, ask, config);
     if (saved) {
+      await installPlaywrightBrowsers();
       await showNextSteps();
     }
   } finally {
     rl.close();
   }
+
 }

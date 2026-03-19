@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import { CliContext, loadEnvFile, loadProfiles } from './common.js';
@@ -53,11 +54,23 @@ async function checkHFToken(token: string): Promise<HFTokenCheck> {
   }
 }
 
-async function getDataStats(projectRoot: string): Promise<DataStats> {
+function resolveDataDir(projectRoot: string, configuredPath?: string): string | undefined {
+  if (configuredPath && configuredPath.trim().length > 0) {
+    const expanded = configuredPath.startsWith('~/')
+      ? join(homedir(), configuredPath.slice(2))
+      : configuredPath;
+    return expanded.startsWith('/') ? expanded : join(projectRoot, expanded);
+  }
+
   const dataDirCandidates = [join(projectRoot, 'mcp-network-data'), join(projectRoot, 'data')];
   const dataDir = dataDirCandidates.find(d => existsSync(d));
+  return dataDir;
+}
 
-  if (!dataDir) {
+async function getDataStats(projectRoot: string, configuredPath?: string): Promise<DataStats> {
+  const dataDir = resolveDataDir(projectRoot, configuredPath);
+
+  if (!dataDir || !existsSync(dataDir)) {
     return { captures: 0, analyses: 0, totalSize: 0 };
   }
 
@@ -78,7 +91,7 @@ async function getDataStats(projectRoot: string): Promise<DataStats> {
   try {
     const { execSync } = await import('node:child_process');
     const output = execSync(`du -sh "${dataDir}" 2>/dev/null | cut -f1`, { encoding: 'utf-8' });
-    stats.totalSize = output.trim();
+    stats.totalSize = output.trim() || '0 B';
   } catch {
     stats.totalSize = 'Unknown';
   }
@@ -147,7 +160,7 @@ export async function runStatusCommand(context: CliContext): Promise<void> {
     const others = Object.keys(profileData.profiles).filter(name => name !== profileData.active);
     if (others.length > 0) {
       log(`\nOther saved: ${others.join(', ')}`, '💡');
-      log('Switch with: mcp-network-analyzer setup --switch <name>');
+      log('Switch with: netcap setup --switch <name>');
     }
   }
 
@@ -178,7 +191,7 @@ export async function runStatusCommand(context: CliContext): Promise<void> {
   }
 
   section('📊 Data Statistics');
-  const stats = await getDataStats(context.projectRoot);
+  const stats = await getDataStats(context.projectRoot, env.MCP_NETWORK_ANALYZER_DATA);
   log(`Captures:    ${stats.captures} sessions`);
   log(`Analyses:    ${stats.analyses} reports`);
   log(`Total Size:  ${stats.totalSize}`);
@@ -187,11 +200,12 @@ export async function runStatusCommand(context: CliContext): Promise<void> {
   const buildStatus = await checkBuildStatus(context.projectRoot);
   if (!buildStatus.built) {
     log('Status:      ❌ Not built');
-    log('Action:      Run `pr build`', '💡');
+    log('Action:      If developing in-repo, run `pr build`', '💡');
+    log('             If using the installed CLI, reinstall with `pnpm link --global` from packages/cli', '💡');
   } else if (buildStatus.needsRebuild) {
     log('Status:      ⚠️  Needs rebuild (source files changed)');
     log(`Last Built:  ${buildStatus.lastBuilt}`);
-    log('Action:      Run `pr build`', '💡');
+    log('Action:      Run `pr build` (development only)', '💡');
   } else {
     log('Status:      ✓ Up to date');
     log(`Last Built:  ${buildStatus.lastBuilt}`);
@@ -199,8 +213,9 @@ export async function runStatusCommand(context: CliContext): Promise<void> {
 
   section('⚡ Quick Actions');
   console.log('');
-  console.log('  mcp-network-analyzer setup');
-  console.log('  mcp-network-analyzer install-claude');
-  console.log('  mcp-network-analyzer serve');
+  console.log('  netcap setup');
+  console.log('  netcap install');
+  console.log('  netcap serve');
+  console.log('  netcap setup --install-chromium');
   console.log('');
 }

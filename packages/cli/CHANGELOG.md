@@ -8,17 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-05-15
 
 ### Added
+- `netcap` short binary alias — installed alongside `mcp-network-analyzer`, both point to the same entry point
+- `setup --reset` (`-r`) — clears `.env` and saved profiles, then re-runs the setup wizard
+- `setup --install-chromium` — first-class CLI/TUI recovery command to install/reinstall Playwright Chromium
+- Free CLI now includes database query tools: `list_analyses`, `list_discoveries`, and `get_database_stats`
 - `install` command — detects installed MCP clients (Claude Desktop, VS Code, Claude Code, Gemini CLI, OpenAI Codex) and installs the server entry via the client's native interface or direct config write
 - `--client <id>` flag for non-interactive / CI installs
 - Unified core CLI runner (`createCli` + `CliExtension`) — free and pro share one CLI engine; package-specific commands (setup, serve) are registered as extensions
 
+### Changed
+- `serve` now accepts `--mode auto|stdio|http`; auto remains stdio-first and can resolve to pro HTTP when `MCP_TRANSPORT=http`
+
 ### Removed
-- `install-claude` command — superseded by `install --client claude-desktop`
+- Legacy one-off client installer command — superseded by `install --client <id>`
 
 ## [0.2.0] - 2026-03-18
 
 ### Added
-- Published CLI (`mcp-network-analyzer`) — `setup`, `status`, `install-claude`, `reset`, `serve` subcommands
+- Published CLI (`mcp-network-analyzer`) — `setup`, `status`, `install`, `reset`, `serve` subcommands
 - Default behaviour: runs `status` when configured, `setup` when not
 - `reset` command with `--config`, `--data`, `--claude`, `--force` flags
 - Profile management via `setup --switch`, `setup --list`, `setup --show-config`
@@ -50,6 +57,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local file storage with JSON database (`data/` directory)
 - Stdio transport for Claude Desktop integration
 - Interactive setup wizard (`pnpm run setup`) with profile switching and `--data-dir` / `--show-config` flags
-- Installation helper for Claude Desktop (`pnpm run install-claude`)
+- Client installation flow (`netcap install --client claude-desktop`)
 - Status checker (`pnpm run status`)
 - Stealth browser mode to avoid bot detection
