@@ -109,64 +109,6 @@ export class IdManager {
     };
   }
 
-  /**
-   * List all available IDs across all phases (DEPRECATED - use listIdsForSession instead)
-   * @deprecated This method exposes IDs across all sessions and should not be used in multi-user environments
-   */
-  public async listAllIds(): Promise<IdListResult> {
-    await this.db.initialize();
-
-    const captures = this.db.listCaptures();
-    const analyses = this.db.listAnalyses();
-    const discoveries = this.db.listDiscoveries();
-
-    // Calculate availability for next phases
-    const capturesWithoutAnalysis = captures.filter(capture => 
-      !analyses.some(analysis => analysis.captureId === capture.id)
-    );
-
-    const analysesWithoutDiscovery = analyses.filter(analysis =>
-      analysis.status === 'complete' && 
-      !discoveries.some(discovery => discovery.analysisId === analysis.id)
-    );
-
-    return {
-      captures: captures.map(c => ({
-        id: c.id,
-        sessionId: c.sessionId,
-        targetUrl: c.targetUrl,
-        status: c.status,
-        requestCount: c.requestCount,
-        responseCount: c.responseCount,
-        timestamp: c.timestamp
-      })),
-      analyses: analyses.map(a => ({
-        id: a.id,
-        captureId: a.captureId,
-        status: a.status,
-        totalRequests: a.totalRequests,
-        totalResponses: a.totalResponses,
-        apiEndpoints: a.apiEndpoints,
-        timestamp: a.timestamp
-      })),
-      discoveries: discoveries.map(d => ({
-        id: d.id,
-        analysisId: d.analysisId,
-        status: d.status,
-        patternsFound: d.patternsFound,
-        paginationDetected: d.paginationDetected,
-        rateLimitingDetected: d.rateLimitingDetected,
-        timestamp: d.timestamp
-      })),
-      summary: {
-        totalCaptures: captures.length,
-        totalAnalyses: analyses.length,
-        totalDiscoveries: discoveries.length,
-        availableForAnalysis: capturesWithoutAnalysis.length,
-        availableForDiscovery: analysesWithoutDiscovery.length
-      }
-    };
-  }
 
   /**
    * Get next available IDs for workflow progression within a specific session
@@ -205,43 +147,6 @@ export class IdManager {
     };
   }
 
-  /**
-   * Get next available IDs for workflow progression (DEPRECATED - use getNextAvailableIdsForSession instead)
-   * @deprecated This method exposes IDs across all sessions and should not be used in multi-user environments
-   */
-  public async getNextAvailableIds(): Promise<{
-    capturesReadyForAnalysis: string[];
-    analysesReadyForDiscovery: string[];
-    suggestedNextAction?: string;
-  }> {
-    const result = await this.listAllIds();
-
-    const capturesReadyForAnalysis = result.captures
-      .filter(c => c.status === 'complete')
-      .filter(c => !result.analyses.some(a => a.captureId === c.id))
-      .map(c => c.id);
-
-    const analysesReadyForDiscovery = result.analyses
-      .filter(a => a.status === 'complete')
-      .filter(a => !result.discoveries.some(d => d.analysisId === a.id))
-      .map(a => a.id);
-
-    let suggestedNextAction: string | undefined;
-    
-    if (capturesReadyForAnalysis.length > 0) {
-      suggestedNextAction = `Run analyze_captured_data with captureId: ${capturesReadyForAnalysis[0]}`;
-    } else if (analysesReadyForDiscovery.length > 0) {
-      suggestedNextAction = `Run discover_api_patterns with analysisId: ${analysesReadyForDiscovery[0]}`;
-    } else if (result.summary.totalCaptures === 0) {
-      suggestedNextAction = 'Start by running capture_network_requests to capture some traffic';
-    }
-
-    return {
-      capturesReadyForAnalysis,
-      analysesReadyForDiscovery,
-      suggestedNextAction
-    };
-  }
 
   /**
    * Validate that an ID belongs to the specified session
@@ -451,26 +356,6 @@ export async function handleListSessionIds(input: { sessionId: string }) {
   };
 }
 
-/**
- * List all available IDs tool handler (DEPRECATED)
- * @deprecated Use handleListSessionIds instead for security
- */
-export async function handleListAllIds() {
-  console.warn('SECURITY WARNING: listAllIds is deprecated and exposes IDs across all sessions');
-  const idManager = new IdManager();
-  const result = await idManager.listAllIds();
-
-  return {
-    content: [
-      {
-        type: 'text' as const,
-        text: `⚠️  **SECURITY WARNING**: This tool is deprecated and shows IDs from all sessions.\n\n` +
-             `Please use 'list_session_ids' instead with a specific sessionId for security.\n\n` +
-             formatIdList(result)
-      }
-    ]
-  };
-}
 
 /**
  * Get next available IDs for a specific session tool handler
@@ -804,15 +689,4 @@ export function registerIdManagementTools(server: McpServer): void {
     async (params) => handleValidateId(params)
   );
 
-  // Deprecated tools kept for backward compatibility
-  server.registerTool(
-    'list_all_ids',
-    {
-      title: 'List All IDs (DEPRECATED)',
-      description:
-        '⚠️ DEPRECATED: Use list_session_ids instead. This tool shows IDs from all sessions and should not be used in multi-user environments.',
-      inputSchema: {}
-    },
-    async () => handleListAllIds()
-  );
 }

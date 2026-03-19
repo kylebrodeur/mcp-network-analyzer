@@ -281,7 +281,7 @@ function generateDiscoveryRecommendations(
   recommendations.push(`📋 Discovery ID: ${discoveryId}`);
   recommendations.push(`🔧 Next: Run generate_export_tool with discoveryId: ${discoveryId}`);
   recommendations.push(`💡 Tip: Include a meaningful toolName and description when generating export tools for better code quality`);
-  recommendations.push(`📊 Or use 'get_next_available_ids' to see all available IDs`);
+  recommendations.push(`📊 Or use 'list_session_ids' to inspect IDs scoped to your session`);
 
   return recommendations;
 }

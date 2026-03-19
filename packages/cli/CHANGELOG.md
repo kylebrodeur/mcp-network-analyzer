@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `serve` now accepts `--mode auto|stdio|http`; auto remains stdio-first and can resolve to pro HTTP when `MCP_TRANSPORT=http`
+- ID workflow guidance now uses session-scoped tools (`list_session_ids`, `get_next_session_ids`) and no longer references deprecated cross-session commands
 
 ### Removed
 - Legacy one-off client installer command — superseded by `install --client <id>`
@@ -53,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `discover_api_patterns` tool — Deep pattern recognition with confidence scoring, pagination detection, data model extraction
 - `search_exported_data` tool — Full-text search across all captured requests and responses
 - `get_server_config` / `set_data_directory` tools — inspect and change data directory at runtime
-- `get_help` / `get_next_available_ids` tools — workflow guidance and ID management
+- `get_help` / `list_session_ids` / `get_next_session_ids` tools — workflow guidance and secure session-scoped ID management
 - Local file storage with JSON database (`data/` directory)
 - Stdio transport for Claude Desktop integration
 - Interactive setup wizard (`pnpm run setup`) with profile switching and `--data-dir` / `--show-config` flags

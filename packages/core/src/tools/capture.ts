@@ -186,7 +186,7 @@ export async function captureNetworkRequests(options: CaptureOptions): Promise<C
         `✅ Capture Complete! Use this ID for next steps:`,
         `📋 Capture ID: ${captureId}`,
         `🔍 Next: Run analyze_captured_data with captureId: ${captureId}`,
-        `📊 Or use 'get_next_available_ids' to see all available IDs`
+        `📊 Or use 'get_next_session_ids' with sessionId: ${sessionId} to see IDs ready for the next phase`
       ]
     };
 

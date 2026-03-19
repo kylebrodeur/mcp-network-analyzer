@@ -1,7 +1,7 @@
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { existsSync } from 'node:fs';
 
 import { CliContext } from '@mcp-network-analyzer/core';
 import { startServer } from '../index.js';

@@ -7,11 +7,13 @@ import { z } from 'zod';
 import { DatabaseService } from '@mcp-network-analyzer/core';
 
 export interface ListAnalysesOptions {
+  sessionId: string;
   limit?: number;
   status?: 'processing' | 'complete' | 'failed';
 }
 
 export interface ListDiscoveriesOptions {
+  sessionId: string;
   limit?: number;
   analysisId?: string;
   status?: 'processing' | 'complete' | 'failed';
@@ -23,10 +25,10 @@ export interface QueryResult {
   error?: string;
 }
 
-export async function listAnalyses(options: ListAnalysesOptions = {}): Promise<QueryResult> {
+export async function listAnalyses(options: ListAnalysesOptions): Promise<QueryResult> {
   try {
     const db = DatabaseService.getInstance();
-    const analyses = db.listAnalyses();
+    const analyses = db.listAnalysesBySession(options.sessionId);
 
     let filtered = analyses;
 
@@ -64,10 +66,10 @@ export async function listAnalyses(options: ListAnalysesOptions = {}): Promise<Q
   }
 }
 
-export async function listDiscoveries(options: ListDiscoveriesOptions = {}): Promise<QueryResult> {
+export async function listDiscoveries(options: ListDiscoveriesOptions): Promise<QueryResult> {
   try {
     const db = DatabaseService.getInstance();
-    const discoveries = db.listDiscoveries();
+    const discoveries = db.listDiscoveriesBySession(options.sessionId);
 
     let filtered = discoveries;
 
@@ -127,12 +129,13 @@ export function registerQueryTools(server: McpServer): void {
       title: 'List Analyses',
       description: 'List all analyses with optional filtering by status',
       inputSchema: z.object({
+        sessionId: z.string().min(1),
         limit: z.number().optional(),
         status: z.enum(['processing', 'complete', 'failed']).optional()
       }).shape
     },
-    async ({ limit, status }) => {
-      const result = await listAnalyses({ limit, status });
+    async ({ sessionId, limit, status }) => {
+      const result = await listAnalyses({ sessionId, limit, status });
       if (!result.success) {
         return { content: [{ type: 'text' as const, text: `Error: ${result.error}` }], isError: true };
       }
@@ -151,13 +154,14 @@ export function registerQueryTools(server: McpServer): void {
       title: 'List Discoveries',
       description: 'List all discoveries with optional filtering',
       inputSchema: z.object({
+        sessionId: z.string().min(1),
         limit: z.number().optional(),
         analysisId: z.string().optional(),
         status: z.enum(['processing', 'complete', 'failed']).optional()
       }).shape
     },
-    async ({ limit, analysisId, status }) => {
-      const result = await listDiscoveries({ limit, analysisId, status });
+    async ({ sessionId, limit, analysisId, status }) => {
+      const result = await listDiscoveries({ sessionId, limit, analysisId, status });
       if (!result.success) {
         return { content: [{ type: 'text' as const, text: `Error: ${result.error}` }], isError: true };
       }

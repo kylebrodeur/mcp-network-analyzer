@@ -78,16 +78,17 @@ function registerQueryTools(server: McpServer): void {
     'list_analyses',
     {
       title: 'List Analyses',
-      description: 'List all analyses with optional filtering by status',
+      description: 'List analyses for a specific session with optional filtering by status',
       inputSchema: z.object({
+        sessionId: z.string().min(1),
         limit: z.number().optional(),
         status: z.enum(['processing', 'complete', 'failed']).optional(),
       }).shape,
     },
-    async ({ limit, status }) => {
+    async ({ sessionId, limit, status }) => {
       try {
         const db = DatabaseService.getInstance();
-        const analyses = db.listAnalyses();
+        const analyses = db.listAnalysesBySession(sessionId);
         let filtered = analyses;
 
         if (status) {
@@ -133,17 +134,18 @@ function registerQueryTools(server: McpServer): void {
     'list_discoveries',
     {
       title: 'List Discoveries',
-      description: 'List all discoveries with optional filtering',
+      description: 'List discoveries for a specific session with optional filtering',
       inputSchema: z.object({
+        sessionId: z.string().min(1),
         limit: z.number().optional(),
         analysisId: z.string().optional(),
         status: z.enum(['processing', 'complete', 'failed']).optional(),
       }).shape,
     },
-    async ({ limit, analysisId, status }) => {
+    async ({ sessionId, limit, analysisId, status }) => {
       try {
         const db = DatabaseService.getInstance();
-        const discoveries = db.listDiscoveries();
+        const discoveries = db.listDiscoveriesBySession(sessionId);
         let filtered = discoveries;
 
         if (analysisId) {

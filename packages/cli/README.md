@@ -92,7 +92,8 @@ netcap serve --mode http             # HTTP mode (requires pro package)
 | `get_server_config` | View current data directory and storage stats |
 | `set_data_directory` | Change data directory at runtime (persisted to `.env`) |
 | `get_help` | Usage guide and workflow overview |
-| `get_next_available_ids` | List recent capture/analysis/discovery IDs |
+| `list_session_ids` | List captures, analyses, and discoveries for one session |
+| `get_next_session_ids` | List IDs in one session that are ready for the next phase |
 
 ## Typical Workflow
 

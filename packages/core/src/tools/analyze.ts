@@ -220,7 +220,7 @@ function generateRecommendations(analysis: AnalysisSummary, analysisId: string):
   recommendations.push(`✅ Analysis Complete! Use this ID for next steps:`);
   recommendations.push(`📋 Analysis ID: ${analysisId}`);
   recommendations.push(`🔍 Next: Run discover_api_patterns with analysisId: ${analysisId}`);
-  recommendations.push(`📊 Or use 'get_next_available_ids' to see all available IDs`);
+  recommendations.push(`📊 Or use 'list_session_ids' to inspect IDs scoped to your session`);
 
   return recommendations;
 }
