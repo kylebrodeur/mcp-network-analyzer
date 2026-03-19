@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -16,12 +16,6 @@ interface DataStats {
   captures: number;
   analyses: number;
   totalSize: string | number;
-}
-
-interface BuildStatus {
-  built: boolean;
-  lastBuilt?: string;
-  needsRebuild?: boolean;
 }
 
 function log(message: string, emoji = ''): void {
@@ -99,37 +93,6 @@ async function getDataStats(projectRoot: string, configuredPath?: string): Promi
   return stats;
 }
 
-async function checkBuildStatus(projectRoot: string): Promise<BuildStatus> {
-  const distIndex = join(projectRoot, 'dist', 'index.js');
-  if (!existsSync(distIndex)) {
-    return { built: false };
-  }
-
-  const distStat = await stat(distIndex);
-  const packageStat = await stat(join(projectRoot, 'package.json'));
-
-  const srcDir = join(projectRoot, 'src');
-  const srcFiles = await readdir(srcDir, { recursive: true });
-  let newestSrc = packageStat.mtime;
-
-  for (const file of srcFiles) {
-    if (typeof file !== 'string' || !file.endsWith('.ts')) {
-      continue;
-    }
-
-    const fileStat = await stat(join(srcDir, file));
-    if (fileStat.mtime > newestSrc) {
-      newestSrc = fileStat.mtime;
-    }
-  }
-
-  return {
-    built: true,
-    lastBuilt: distStat.mtime.toLocaleString(),
-    needsRebuild: newestSrc > distStat.mtime
-  };
-}
-
 export async function runStatusCommand(context: CliContext): Promise<void> {
   console.log('\n🔍 MCP Network Analyzer - Status Check\n');
 
@@ -195,21 +158,6 @@ export async function runStatusCommand(context: CliContext): Promise<void> {
   log(`Captures:    ${stats.captures} sessions`);
   log(`Analyses:    ${stats.analyses} reports`);
   log(`Total Size:  ${stats.totalSize}`);
-
-  section('🔨 Build Status');
-  const buildStatus = await checkBuildStatus(context.projectRoot);
-  if (!buildStatus.built) {
-    log('Status:      ❌ Not built');
-    log('Action:      If developing in-repo, run `pr build`', '💡');
-    log('             If using the installed CLI, reinstall with `pnpm link --global` from packages/cli', '💡');
-  } else if (buildStatus.needsRebuild) {
-    log('Status:      ⚠️  Needs rebuild (source files changed)');
-    log(`Last Built:  ${buildStatus.lastBuilt}`);
-    log('Action:      Run `pr build` (development only)', '💡');
-  } else {
-    log('Status:      ✓ Up to date');
-    log(`Last Built:  ${buildStatus.lastBuilt}`);
-  }
 
   section('⚡ Quick Actions');
   console.log('');
