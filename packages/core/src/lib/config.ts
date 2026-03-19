@@ -3,6 +3,9 @@
  * Supports local and cloud storage modes
  */
 
+import { homedir } from 'node:os';
+import { resolve } from 'node:path';
+
 export type StorageMode = 'local' | 'cloud';
 
 export interface CloudStorageConfig {
@@ -54,10 +57,11 @@ export class Config {
    */
   private loadFromEnvironment(): ConfigOptions {
     const mode = (process.env.MCP_STORAGE_MODE || 'local') as StorageMode;
+    const localDataDir = this.normalizeLocalPath(process.env.MCP_NETWORK_ANALYZER_DATA);
     
     const config: ConfigOptions = {
       mode,
-      localDataDir: process.env.MCP_NETWORK_ANALYZER_DATA
+      localDataDir
     };
 
     // Load cloud storage configuration if in cloud mode
@@ -75,6 +79,34 @@ export class Config {
     }
 
     return config;
+  }
+
+  /**
+   * Expand shell-style home paths for local directory configuration
+   */
+  private normalizeLocalPath(input?: string): string | undefined {
+    if (!input) {
+      return undefined;
+    }
+
+    const trimmed = input.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    if (trimmed === '~') {
+      return homedir();
+    }
+
+    if (trimmed.startsWith('~/')) {
+      return resolve(homedir(), trimmed.slice(2));
+    }
+
+    if (trimmed.startsWith('~\\')) {
+      return resolve(homedir(), trimmed.slice(2));
+    }
+
+    return trimmed;
   }
 
   /**

@@ -3,10 +3,11 @@
  * Allows users to inspect and update the data directory from within Claude
  */
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { Config } from '../lib/config.js';
 import { Storage } from '../lib/storage.js';
@@ -49,6 +50,23 @@ async function countSubdirs(dir: string): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+function normalizeDirectoryInput(inputPath: string): string {
+  const trimmed = inputPath.trim();
+  if (trimmed === '~') {
+    return homedir();
+  }
+
+  if (trimmed.startsWith('~/')) {
+    return resolve(homedir(), trimmed.slice(2));
+  }
+
+  if (trimmed.startsWith('~\\')) {
+    return resolve(homedir(), trimmed.slice(2));
+  }
+
+  return resolve(trimmed);
 }
 
 export function registerConfigTools(server: McpServer): void {
@@ -108,7 +126,7 @@ export function registerConfigTools(server: McpServer): void {
       }).shape
     },
     async ({ path: inputPath }) => {
-      const resolvedPath = resolve(inputPath);
+      const resolvedPath = normalizeDirectoryInput(inputPath);
       const previousDir = Storage.getDataDirectory();
 
       // Validate by attempting to create the directory

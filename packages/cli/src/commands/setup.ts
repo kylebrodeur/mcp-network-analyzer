@@ -12,6 +12,27 @@ interface SetupConfig {
   env: Record<string, string>;
 }
 
+function normalizeDirectoryInput(inputPath: string): string {
+  const trimmed = inputPath.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  if (trimmed === '~') {
+    return homedir();
+  }
+
+  if (trimmed.startsWith('~/')) {
+    return resolve(homedir(), trimmed.slice(2));
+  }
+
+  if (trimmed.startsWith('~\\')) {
+    return resolve(homedir(), trimmed.slice(2));
+  }
+
+  return resolve(trimmed);
+}
+
 function log(message: string, emoji = '✓'): void {
   console.log(`${emoji} ${message}`);
 }
@@ -71,10 +92,7 @@ async function setupLocal(ask: (prompt: string) => Promise<string>): Promise<Set
 
   const config: SetupConfig = { mode: 'local', env: {} };
   if (customPath.trim()) {
-    const trimmed = customPath.trim();
-    const normalized = trimmed.startsWith('~/')
-      ? resolve(homedir(), trimmed.slice(2))
-      : resolve(trimmed);
+    const normalized = normalizeDirectoryInput(customPath);
     config.env.MCP_NETWORK_ANALYZER_DATA = normalized;
   }
 
@@ -162,7 +180,7 @@ async function showNextSteps(): Promise<void> {
 }
 
 export async function setDataDir(context: CliContext, inputPath: string): Promise<void> {
-  const resolvedPath = resolve(inputPath);
+  const resolvedPath = normalizeDirectoryInput(inputPath);
 
   try {
     await mkdir(resolvedPath, { recursive: true });
