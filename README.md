@@ -1,7 +1,5 @@
 # MCP Network Analyzer Monorepo
 
-[![CI](https://github.com/kylebrodeur/mcp-network-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/kylebrodeur/mcp-network-analyzer/actions/workflows/ci.yml)
-
 MCP Network Analyzer captures browser network traffic, analyzes API patterns, and exposes the workflow through an MCP server for AI clients.
 
 [CLI package (npm)](https://www.npmjs.com/package/mcp-network-analyzer) | [Issues](https://github.com/kylebrodeur/mcp-network-analyzer/issues) | [Security](https://github.com/kylebrodeur/mcp-network-analyzer/security)
