@@ -208,11 +208,11 @@ function generateRecommendations(analysis: AnalysisSummary, analysisId: string):
   // Next steps
   if (analysis.summary.apiEndpoints > 5) {
     recommendations.push(
-      "Complex API detected. Consider using discover_api_patterns for deeper analysis before generating export tools."
+      "Complex API detected. Consider using discover_api_patterns for deeper pattern and data model analysis."
     );
   } else if (analysis.summary.apiEndpoints > 0) {
     recommendations.push(
-      "Simple API detected. You may proceed directly to generate_export_tool if patterns are clear."
+      "Simple API detected. You can inspect endpoint groups directly or run discover_api_patterns for additional structure."
     );
   }
 

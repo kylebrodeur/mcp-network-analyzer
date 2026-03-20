@@ -306,7 +306,7 @@ export class NetworkAnalyzer {
     if (summary.endpointGroups.length > 10) {
       suggestions.push('Large API surface detected - consider focusing on specific endpoints');
     } else if (summary.endpointGroups.length > 0) {
-      suggestions.push('Ready for code generation - run generate_export_tool to create export script');
+      suggestions.push('Endpoint groups are ready for downstream extraction planning and manual implementation');
     }
 
     // Suggest based on errors

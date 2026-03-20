@@ -268,7 +268,7 @@ function generateDiscoveryRecommendations(
   // Next steps
   if (discovery.patterns.length > 0) {
     recommendations.push(
-      "Ready to generate export tools. Use generate_export_tool with this discovery ID to create automated data extraction scripts."
+      "Pattern discovery complete. Review inferred endpoint patterns and data models to plan downstream extraction logic."
     );
   } else {
     recommendations.push(
@@ -279,8 +279,7 @@ function generateDiscoveryRecommendations(
   // Always add the discovery ID for next steps
   recommendations.push(`✅ Discovery Complete! Use this ID for next steps:`);
   recommendations.push(`📋 Discovery ID: ${discoveryId}`);
-  recommendations.push(`🔧 Next: Run generate_export_tool with discoveryId: ${discoveryId}`);
-  recommendations.push(`💡 Tip: Include a meaningful toolName and description when generating export tools for better code quality`);
+  recommendations.push(`🔍 Next: Use list_session_ids or search_exported_data for session-scoped follow-up analysis.`);
   recommendations.push(`📊 Or use 'list_session_ids' to inspect IDs scoped to your session`);
 
   return recommendations;

@@ -30,3 +30,6 @@ data/generated/*
 !data/generated/.gitkeep
 
 mcp-network-data/
+
+# npm pack artifacts
+*.tgz
