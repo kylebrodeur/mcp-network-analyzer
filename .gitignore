@@ -33,3 +33,6 @@ mcp-network-data/
 
 # npm pack artifacts
 *.tgz
+packages/cli/tsconfig.tsbuildinfo
+packages/core/tsconfig.tsbuildinfo
+packages/pro/tsconfig.tsbuildinfo
